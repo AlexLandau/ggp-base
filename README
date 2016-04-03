@@ -1,3 +1,8 @@
+Note: This is a fork of GGP-Base with some tweaks to support Alloy specifically.
+
+This stuff used to live in the Alloy repo itself. I'm hoping this approach will
+be easier to keep in sync with the GGP-Base repo.
+
 =====================================
 = GENERAL GAME PLAYING BASE PACKAGE =
 =====================================
