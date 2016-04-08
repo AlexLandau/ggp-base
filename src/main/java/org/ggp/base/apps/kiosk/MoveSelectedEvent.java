@@ -23,4 +23,9 @@ public class MoveSelectedEvent extends Event {
     public boolean isFinal() {
         return isFinal;
     }
+
+    @Override
+    public String toString() {
+        return "Move selected event: " + theMove;
+    }
 }

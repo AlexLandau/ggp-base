@@ -34,4 +34,18 @@ public final class Or extends Component
     {
         return toDot("ellipse", "grey", "OR");
     }
+
+    @Override
+    public String getShortName() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("or(");
+        for (Component component : getInputs()) {
+            sb.append(component.getShortName()).append(", ");
+        }
+        if (getInputs().size() > 0) {
+            sb.delete(sb.length() - 2, sb.length());
+        }
+        sb.append(")");
+        return sb.toString();
+    }
 }

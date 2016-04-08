@@ -16,8 +16,20 @@ import java.util.Set;
  * @author Sam
  */
 public abstract class GameRepository {
+    private static final String STANFORD_REPO_URL = "games.ggp.org/stanford";
+    private static final String DRESDEN_REPO_URL = "games.ggp.org/dresden";
+    private static final String DEFAULT_REPO_URL = "games.ggp.org/base";
+
     public static GameRepository getDefaultRepository() {
-        return new CloudGameRepository("games.ggp.org/base");
+        return new CloudGameRepository(DEFAULT_REPO_URL);
+    }
+
+    public static GameRepository getDresdenRepository() {
+        return new CloudGameRepository(DRESDEN_REPO_URL);
+    }
+
+    public static GameRepository getStanfordRepository() {
+        return new CloudGameRepository(STANFORD_REPO_URL);
     }
 
     public Game getGame(String theKey) {

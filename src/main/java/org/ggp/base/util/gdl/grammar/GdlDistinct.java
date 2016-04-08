@@ -1,8 +1,8 @@
 package org.ggp.base.util.gdl.grammar;
 
-@SuppressWarnings("serial")
 public final class GdlDistinct extends GdlLiteral
 {
+    private static final long serialVersionUID = 1L;
 
     private final GdlTerm arg1;
     private final GdlTerm arg2;

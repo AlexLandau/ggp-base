@@ -25,4 +25,9 @@ public final class ServerMatchUpdatedEvent extends Event {
     public String getExternalPublicationKey() {
         return externalPublicationKey;
     }
+
+    @Override
+    public String toString() {
+        return "Server match updated event: " + match.getMatchId();
+    }
 }

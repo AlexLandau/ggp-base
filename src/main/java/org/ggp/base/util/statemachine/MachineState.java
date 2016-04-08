@@ -1,11 +1,20 @@
 package org.ggp.base.util.statemachine;
 
+import java.io.Serializable;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.ggp.base.util.gdl.grammar.GdlSentence;
+import org.ggp.base.util.hashing.ZHashContext;
+import org.ggp.base.util.ruleengine.RuleEngineState;
+import org.ggp.base.util.ruleengine.StdTranslator;
+import org.ggp.base.util.ruleengine.Translator;
 
-public class MachineState {
+public class MachineState implements Serializable, RuleEngineState<Move, MachineState> {
+    private static final long serialVersionUID = 1L;
+
     public MachineState() {
         this.contents = null;
     }
@@ -15,6 +24,7 @@ public class MachineState {
      * want to do more advanced things can subclass this implementation, but for
      * many cases this will do exactly what we want.
      */
+    //TODO: Make this an ImmutableSet in GGP-Base?
     private final Set<GdlSentence> contents;
     public MachineState(Set<GdlSentence> contents)
     {
@@ -31,8 +41,16 @@ public class MachineState {
         return contents;
     }
 
-    @Override
-    public MachineState clone() {
+    //NOTE: A StateMachine may have a ZHashContext given to it at construction
+    //time. If it does, it may assume that the context is the one passed into it.
+    //This means the context passed in should always be the same, over the course
+    //of a given match.
+    //TODO: Override everywhere appropriate
+    public long getZobristHash(ZHashContext zHashContext) {
+        return zHashContext.getHashForFullState(getContents());
+    }
+
+    public MachineState getCopy() {
         return new MachineState(new HashSet<GdlSentence>(contents));
     }
 
@@ -50,7 +68,10 @@ public class MachineState {
         if(contents == null)
             return "(MachineState with null contents)";
         else
-            return contents.toString();
+            return contents.stream()
+                    .sorted(Comparator.comparing(gdl -> gdl.toString()))
+                    .collect(Collectors.toList())
+                    .toString();
     }
 
     @Override
@@ -63,5 +84,11 @@ public class MachineState {
         }
 
         return false;
+
+    }
+
+    @Override
+    public Translator<Move, MachineState> getTranslator() {
+        return StdTranslator.INSTANCE;
     }
 }

@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.ggp.base.util.gdl.grammar.Gdl;
+import org.ggp.base.util.propnet.architecture.Component;
+import org.ggp.base.util.propnet.architecture.PropNet;
 import org.ggp.base.util.statemachine.MachineState;
 import org.ggp.base.util.statemachine.Move;
 import org.ggp.base.util.statemachine.Role;
@@ -138,5 +140,47 @@ public final class CachedStateMachine extends StateMachine
     public MachineState getInitialState() {
         // TODO(schreib): Should this be cached as well?
         return backingStateMachine.getInitialState();
+    }
+
+    @Override
+    public StateMachine getSynchronizedCopy() {
+        // TODO: If actually using this SM, make sure to share the cache
+        return new CachedStateMachine(backingStateMachine.getSynchronizedCopy());
+    }
+
+    @Override
+    public Map<Role, Move> getGebMoves(MachineState state) {
+        return backingStateMachine.getGebMoves(state);
+    }
+
+    @Override
+    public MachineState translateState(MachineState state) {
+        return backingStateMachine.translateState(state);
+    }
+
+    @Override
+    public boolean isNative(MachineState state) {
+        return backingStateMachine.isNative(state);
+    }
+
+    @Override
+    public boolean isPropNetBased() {
+        return backingStateMachine.isPropNetBased();
+    }
+
+    @Override
+    public PropNet getPropNet() {
+        return backingStateMachine.getPropNet();
+    }
+
+    @Override
+    public boolean getComponentValue(MachineState state, Component component) {
+        return backingStateMachine.getComponentValue(state, component);
+    }
+
+    @Override
+    public int getComponentTrueInputsCount(MachineState state,
+            Component component) {
+        return backingStateMachine.getComponentTrueInputsCount(state, component);
     }
 }

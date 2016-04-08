@@ -1,19 +1,26 @@
 package org.ggp.base.util.gdl.grammar;
 
-@SuppressWarnings("serial")
 public final class GdlVariable extends GdlTerm
 {
+    private static final long serialVersionUID = 1L;
 
     private final String name;
+    private final transient int id;
 
-    GdlVariable(String name)
+    GdlVariable(String name, int id)
     {
         this.name = name.intern();
+        this.id = id;
     }
 
     public String getName()
     {
         return name;
+    }
+
+    public int getId()
+    {
+        return id;
     }
 
     @Override

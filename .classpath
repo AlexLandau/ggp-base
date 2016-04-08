@@ -5,8 +5,13 @@
 	<classpathentry kind="src" path="src/main/scala"/>
 	<classpathentry kind="src" path="src/main/resources"/>
 	<classpathentry kind="src" path="src/test/java"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7/"/>
 	<classpathentry kind="con" path="org.scala-ide.sdt.launching.SCALA_CONTAINER"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8/"/>
+	<classpathentry sourcepath="C:/Users/Alex/.gradle/caches/modules-2/files-2.1/com.google.code.findbugs/jsr305/3.0.0/936f4430478909ed7b138d42f9ad73c919a87b26/jsr305-3.0.0-sources.jar" kind="lib" path="C:/Users/Alex/.gradle/caches/modules-2/files-2.1/com.google.code.findbugs/jsr305/3.0.0/5871fb60dc68d67da54a663c3fd636a10a532948/jsr305-3.0.0.jar"/>
+	<classpathentry sourcepath="C:/Users/Alex/.gradle/caches/modules-2/files-2.1/net.alloyggp/escape-rope/0.0.2/54ac11fff9164dd3fbd8a4bb37a2323108ad70a9/escape-rope-0.0.2-sources.jar" kind="lib" path="C:/Users/Alex/.gradle/caches/modules-2/files-2.1/net.alloyggp/escape-rope/0.0.2/17401a76c284f1b147d2f8c82cb9005a3b38ebbf/escape-rope-0.0.2.jar"/>
+	<classpathentry sourcepath="C:/Users/Alex/.gradle/caches/modules-2/files-2.1/net.sf.saxon/Saxon-HE/9.5.1-8/e004d58396d6b8da541d4eac3bbf7dc34448e85/Saxon-HE-9.5.1-8-sources.jar" kind="lib" path="C:/Users/Alex/.gradle/caches/modules-2/files-2.1/net.sf.saxon/Saxon-HE/9.5.1-8/622d9162e12af4b781df55075d1ecbe8825414a1/Saxon-HE-9.5.1-8.jar"/>
+	<classpathentry sourcepath="C:/Users/Alex/.gradle/caches/modules-2/files-2.1/net.sf.trove4j/trove4j/3.0.3/109c5be93362e6e651e417c51d1863477a22969c/trove4j-3.0.3-sources.jar" kind="lib" path="C:/Users/Alex/.gradle/caches/modules-2/files-2.1/net.sf.trove4j/trove4j/3.0.3/42ccaf4761f0dfdfa805c9e340d99a755907e2dd/trove4j-3.0.3.jar"/>
+	<classpathentry sourcepath="C:/Users/Alex/.gradle/caches/modules-2/files-2.1/org.jsoup/jsoup/1.8.3/17b6b6cb133d73e13e2e1f3550f90d4e23451b10/jsoup-1.8.3-sources.jar" kind="lib" path="C:/Users/Alex/.gradle/caches/modules-2/files-2.1/org.jsoup/jsoup/1.8.3/65fd012581ded67bc20945d85c32b4598c3a9cf1/jsoup-1.8.3.jar"/>
 	<classpathentry kind="lib" path="lib/JUnit/junit-4.11.jar"/>
 	<classpathentry kind="lib" path="lib/JUnit/hamcrest-core-1.3.jar"/>
 	<classpathentry kind="lib" path="lib/Guava/guava-14.0.1.jar" sourcepath="lib/Guava/guava-14.0.1-sources.jar"/>

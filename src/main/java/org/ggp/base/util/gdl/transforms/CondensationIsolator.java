@@ -4,11 +4,11 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -162,13 +162,14 @@ public class CondensationIsolator {
          * So, what kind of algorithm can we find to solve this task?
          */
         List<Gdl> newDescription = new ArrayList<Gdl>();
-        Queue<GdlRule> rulesToAdd = new LinkedList<GdlRule>();
+        Queue<GdlRule> rulesToAdd = new ArrayDeque<GdlRule>();
 
-        for(Gdl gdl : description) {
-            if(gdl instanceof GdlRule)
+        for (Gdl gdl : description) {
+            if (gdl instanceof GdlRule) {
                 rulesToAdd.add((GdlRule) gdl);
-            else
+            } else {
                 newDescription.add(gdl);
+            }
         }
 
         //Don't use the model indiscriminately; it reflects the old description,

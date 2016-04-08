@@ -36,6 +36,10 @@ public class ConstantCheckerFactory {
      * transformation applied to them.
      *
      * On average, this approach is more efficient than {@link #createWithProver(SentenceFormModel)}.
+     *
+     * TODO: This is somewhat inefficient due to creating too many AssignmentImpls. We should use
+     * AssignmentIterationPlans in the GdlChainingReasoner (or NewAssignmentIterationPlans) to
+     * avoid recalculating the correct assignment iteration approach.
      */
     public static ImmutableConstantChecker createWithForwardChaining(SentenceDomainModel model) throws InterruptedException {
         GdlChainingReasoner reasoner = GdlChainingReasoner.create(model);

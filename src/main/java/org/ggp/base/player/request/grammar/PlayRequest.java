@@ -35,6 +35,9 @@ public final class PlayRequest extends Request
         // we're currently playing. If we're not playing a match, or we're
         // playing a different match, send back "busy".
         if (gamer.getMatch() == null || !gamer.getMatch().getMatchId().equals(matchId)) {
+            System.out.println("returning busy");
+            System.out.println("Received match ID: " + matchId);
+            System.out.println("Is match null?: " + (gamer.getMatch() == null));
             gamer.notifyObservers(new GamerUnrecognizedMatchEvent(matchId));
             GamerLogger.logError("GamePlayer", "Got play message not intended for current game: ignoring.");
             return "busy";

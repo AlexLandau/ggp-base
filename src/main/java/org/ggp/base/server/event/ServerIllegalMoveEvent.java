@@ -30,4 +30,8 @@ public final class ServerIllegalMoveEvent extends Event implements Serializable
         return role;
     }
 
+    @Override
+    public String toString() {
+        return "Server illegal move event: " + role + ", " + move;
+    }
 }

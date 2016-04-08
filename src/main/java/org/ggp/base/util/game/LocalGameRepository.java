@@ -229,7 +229,7 @@ public final class LocalGameRepository extends GameRepository {
                 } else if (theFile.getName().endsWith(".png")) {
                     // TODO: Handle other binary formats?
                     return readBinaryFile(theFile);
-                } else if (theFile.getName().endsWith("jpg")) {
+                } else if (theFile.getName().endsWith(".jpg")) {
                     return readBinaryFile(theFile);
                 } else if (theFile.getName().endsWith(".xsl")) {
                     return transformXSL(readFile(theFile)).getBytes();

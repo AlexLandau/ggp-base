@@ -17,4 +17,8 @@ public final class PlayerTimeEvent extends Event
         return time;
     }
 
+    @Override
+    public String toString() {
+        return "Player time event: " + time;
+    }
 }

@@ -54,7 +54,7 @@ public final class Match
     private final String matchId;
     private final String randomToken;
     private final String spectatorAuthToken;
-    private String tournamentNameFromHost;
+    private final String tournamentNameFromHost;
     private final int playClock;
     private final int startClock;
     private final int previewClock;

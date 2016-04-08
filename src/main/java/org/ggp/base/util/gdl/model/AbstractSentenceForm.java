@@ -62,8 +62,14 @@ public abstract class AbstractSentenceForm implements SentenceForm {
         return hashCode;
     }
 
+    //TODO: Memoize this! (Important!)
     @Override
     public String toString() {
         return underscoreSentence.get().toString();
+    }
+
+    @Override
+    public GdlSentence getSampleSentence() {
+        return underscoreSentence.get();
     }
 }

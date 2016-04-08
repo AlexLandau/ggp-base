@@ -4,6 +4,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -224,6 +225,21 @@ public final class GameServer extends Thread implements Subject
             fw.close();
         } catch (IOException ie) {
             ie.printStackTrace();
+        }
+    }
+
+    @SuppressWarnings("unused")
+    private void saveMatch() {
+        String filename = "match" + System.currentTimeMillis();
+        File file = new File(filename + ".log");
+        while (file.exists()) {
+            filename = filename + "_";
+            file = new File(filename + ".log");
+        }
+        try (Writer out = new BufferedWriter(new FileWriter(file))) {
+            out.append(match.toJSON());
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 

@@ -103,9 +103,13 @@ public final class VisualizationPanel extends JPanel implements Observer
                 JPanel newPanel = null;
                 try {
                     String XML = Match.renderStateXML(state.getContents());
-                    String XSL = theGame.getStylesheet();
-                    if (XSL != null) {
+                    String XSL = theGame.getXsltStylesheet();
+                    String JS = theGame.getJsStylesheet();
+                    if (JS != null && !JS.isEmpty()) {
+                        newPanel = new NewVizContainerPanel(state.getContents(), JS, myThis);
+                    } else if (XSL != null) {
                         newPanel = new VizContainerPanel(XML, XSL, myThis);
+                    } else {
                     }
                 } catch(Exception ex) {
                     ex.printStackTrace();

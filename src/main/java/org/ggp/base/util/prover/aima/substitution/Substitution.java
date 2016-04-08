@@ -2,6 +2,7 @@ package org.ggp.base.util.prover.aima.substitution;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import org.ggp.base.util.gdl.grammar.GdlTerm;
 import org.ggp.base.util.gdl.grammar.GdlVariable;
@@ -85,6 +86,14 @@ public final class Substitution
         sb.append("}");
 
         return sb.toString();
+    }
+
+    public void retainKeys(Set<GdlVariable> varsInSentence) {
+        contents.keySet().retainAll(varsInSentence);
+    }
+
+    public int size() {
+        return contents.size();
     }
 
 }

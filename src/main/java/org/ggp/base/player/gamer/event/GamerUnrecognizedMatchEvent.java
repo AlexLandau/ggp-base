@@ -17,4 +17,8 @@ public final class GamerUnrecognizedMatchEvent extends Event
         return matchId;
     }
 
+    @Override
+    public String toString() {
+        return "Gamer unrecognized match event: " + matchId;
+    }
 }

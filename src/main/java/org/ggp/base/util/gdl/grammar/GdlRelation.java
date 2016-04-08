@@ -4,9 +4,9 @@ import java.util.List;
 
 import com.google.common.collect.ImmutableList;
 
-@SuppressWarnings("serial")
 public final class GdlRelation extends GdlSentence
 {
+    private static final long serialVersionUID = 1L;
 
     private final ImmutableList<GdlTerm> body;
     private transient Boolean ground;
@@ -86,6 +86,11 @@ public final class GdlRelation extends GdlSentence
     public List<GdlTerm> getBody()
     {
         return body;
+    }
+
+    @Override
+    public GdlSentence withName(GdlConstant newName) {
+        return GdlPool.getRelation(newName, body);
     }
 
 }

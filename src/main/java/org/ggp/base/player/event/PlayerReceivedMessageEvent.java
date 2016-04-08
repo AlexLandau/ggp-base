@@ -17,4 +17,8 @@ public final class PlayerReceivedMessageEvent extends Event
         return message;
     }
 
+    @Override
+    public String toString() {
+        return "Player received message event: " + message;
+    }
 }

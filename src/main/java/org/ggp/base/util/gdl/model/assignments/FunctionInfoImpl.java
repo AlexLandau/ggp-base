@@ -1,6 +1,5 @@
 package org.ggp.base.util.gdl.model.assignments;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -15,58 +14,31 @@ import org.ggp.base.util.gdl.grammar.GdlVariable;
 import org.ggp.base.util.gdl.model.SentenceForm;
 import org.ggp.base.util.gdl.transforms.ConstantChecker;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 //Represents information about a sentence form that is constant.
 public class FunctionInfoImpl implements FunctionInfo {
-    private SentenceForm form;
+    private final SentenceForm form;
 
     //True iff the slot has at most one value given the other slots' values
-    private List<Boolean> dependentSlots = new ArrayList<Boolean>();
-    private List<Map<ImmutableList<GdlConstant>, GdlConstant>> valueMaps = Lists.newArrayList();
+    private final ImmutableList<Boolean> dependentSlots;
+    private final ImmutableList<ImmutableMap<ImmutableList<GdlConstant>, GdlConstant>> valueMaps;
 
-    public FunctionInfoImpl(SentenceForm form, Set<GdlSentence> trueSentences) throws InterruptedException {
+    private FunctionInfoImpl(SentenceForm form, ImmutableList<Boolean> dependentSlots,
+            ImmutableList<ImmutableMap<ImmutableList<GdlConstant>, GdlConstant>> valueMaps) {
         this.form = form;
-
-        int numSlots = form.getTupleSize();
-
-        for(int i = 0; i < numSlots; i++) {
-            //We want to establish whether or not this is a constant...
-            Map<ImmutableList<GdlConstant>, GdlConstant> functionMap = Maps.newHashMap();
-            boolean functional = true;
-            for (GdlSentence sentence : trueSentences) {
-                ConcurrencyUtils.checkForInterruption();
-                List<GdlConstant> tuple = GdlUtils.getTupleFromGroundSentence(sentence);
-                List<GdlConstant> tuplePart = Lists.newArrayListWithCapacity(tuple.size() - 1);
-                tuplePart.addAll(tuple.subList(0, i));
-                tuplePart.addAll(tuple.subList(i + 1, tuple.size()));
-                if(functionMap.containsKey(tuplePart)) {
-                    //We have two tuples with different values in just this slot
-                    functional = false;
-                    break;
-                }
-                //Otherwise, we record it
-                functionMap.put(ImmutableList.copyOf(tuplePart), tuple.get(i));
-            }
-
-            if(functional) {
-                //Record the function
-                dependentSlots.add(true);
-                valueMaps.add(functionMap);
-            } else {
-                //Forget it
-                dependentSlots.add(false);
-                valueMaps.add(null);
-            }
-        }
+        this.dependentSlots = dependentSlots;
+        this.valueMaps = valueMaps;
     }
-
 
     @Override
     public Map<ImmutableList<GdlConstant>, GdlConstant> getValueMap(int index) {
+        Preconditions.checkArgument(dependentSlots.get(index));
         return valueMaps.get(index);
     }
 
@@ -116,11 +88,47 @@ public class FunctionInfoImpl implements FunctionInfo {
     }
     public static FunctionInfo create(SentenceForm form,
             ConstantChecker constantChecker) throws InterruptedException {
-        return new FunctionInfoImpl(form, ImmutableSet.copyOf(constantChecker.getTrueSentences(form)));
+        return create(form, ImmutableSet.copyOf(constantChecker.getTrueSentences(form)));
     }
     public static FunctionInfo create(SentenceForm form,
-            Set<GdlSentence> set) throws InterruptedException {
-        return new FunctionInfoImpl(form, set);
+            Set<GdlSentence> trueSentences) throws InterruptedException {
+        int numSlots = form.getTupleSize();
+
+        List<Boolean> dependentSlots = Lists.newArrayList();
+        List<ImmutableMap<ImmutableList<GdlConstant>, GdlConstant>> valueMaps = Lists.newArrayList();
+        for(int i = 0; i < numSlots; i++) {
+            //We want to establish whether or not this is a constant...
+            Map<ImmutableList<GdlConstant>, GdlConstant> functionMap = Maps.newHashMap();
+            boolean functional = true;
+            for (GdlSentence sentence : trueSentences) {
+                ConcurrencyUtils.checkForInterruption();
+                List<GdlConstant> tuple = GdlUtils.getTupleFromGroundSentence(sentence);
+                List<GdlConstant> tuplePart = Lists.newArrayListWithCapacity(tuple.size() - 1);
+                tuplePart.addAll(tuple.subList(0, i));
+                tuplePart.addAll(tuple.subList(i + 1, tuple.size()));
+                if(functionMap.containsKey(tuplePart)) {
+                    //We have two tuples with different values in just this slot
+                    functional = false;
+                    break;
+                }
+                //Otherwise, we record it
+                functionMap.put(ImmutableList.copyOf(tuplePart), tuple.get(i));
+            }
+
+            if(functional) {
+                //Record the function
+                dependentSlots.add(true);
+                valueMaps.add(ImmutableMap.copyOf(functionMap));
+            } else {
+                //Forget it
+                dependentSlots.add(false);
+                valueMaps.add(ImmutableMap.of());
+            }
+        }
+
+        return new FunctionInfoImpl(form,
+                ImmutableList.copyOf(dependentSlots),
+                ImmutableList.copyOf(valueMaps));
     }
     @Override
     public SentenceForm getSentenceForm() {
@@ -130,5 +138,15 @@ public class FunctionInfoImpl implements FunctionInfo {
     public String toString() {
         return "FunctionInfoImpl [form=" + form + ", dependentSlots="
                 + dependentSlots + ", valueMaps=" + valueMaps + "]";
+    }
+
+
+    public static Map<SentenceForm, FunctionInfo> createMap(
+            ConstantChecker constantChecker) throws InterruptedException {
+        ImmutableMap.Builder<SentenceForm, FunctionInfo> result = ImmutableMap.builder();
+        for (SentenceForm constantForm : constantChecker.getConstantSentenceForms()) {
+            result.put(constantForm, create(constantForm, constantChecker));
+        }
+        return result.build();
     }
 }

@@ -41,4 +41,9 @@ public final class Constant extends Component
     {
         return toDot("doublecircle", "grey", Boolean.toString(value).toUpperCase());
     }
+
+    @Override
+    public String getShortName() {
+        return Boolean.toString(value);
+    }
 }

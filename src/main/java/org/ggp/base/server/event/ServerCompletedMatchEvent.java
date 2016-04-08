@@ -22,4 +22,8 @@ public final class ServerCompletedMatchEvent extends Event implements Serializab
         return goals;
     }
 
+    @Override
+    public String toString() {
+        return "Server completed match event: " + goals;
+    }
 }

@@ -45,6 +45,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.SetMultimap;
 import com.google.common.collect.Sets;
 
+//TODO: Add stuff to GGP-Base version
 public class StaticValidator implements GameValidator {
     private static final GdlConstant ROLE = GdlPool.getConstant("role");
     private static final GdlConstant TERMINAL = GdlPool.getConstant("terminal");
@@ -99,6 +100,7 @@ public class StaticValidator implements GameValidator {
          * - Goal values are integers between 0 and 100
          * Misc.:
          * + All objects are relations or rules
+         * - Sentences used in rule bodies can actually be true (e.g. a warning for typo detection)
          * + (warning) Sentence names used in the bodies of rules are defined somewhere
          *
          * Things we can't really test here:
@@ -122,6 +124,7 @@ public class StaticValidator implements GameValidator {
             } else if (gdl instanceof GdlRule) {
                 rules.add((GdlRule) gdl);
             } else if (gdl instanceof GdlProposition) {
+                //TODO: Add this?
                 warnings.add(new ValidatorWarning("StaticValidator warning: The rules contain the GdlProposition " + gdl + ", which may not be intended."));
             } else {
                 throw new ValidatorException("The rules include a GDL object of type " + gdl.getClass().getSimpleName() + ". Only GdlRelations and GdlRules are expected. The Gdl object is: " + gdl);
@@ -136,6 +139,7 @@ public class StaticValidator implements GameValidator {
             }
         }
         //4) Are the arities of all relations and all functions fixed?
+        //Implemented in Griddle as FixedArityCheck
         Map<GdlConstant, Integer> sentenceArities = new HashMap<GdlConstant, Integer>();
         Map<GdlConstant, Integer> functionArities = new HashMap<GdlConstant, Integer>();
         for(GdlRelation relation : relations) {
@@ -155,16 +159,19 @@ public class StaticValidator implements GameValidator {
         testPredefinedArities(sentenceArities, functionArities);
 
         //7) Are all rules safe?
+        //This is implemented in Griddle as the RuleSafetyCheck.
         for(GdlRule rule : rules) {
             testRuleSafety(rule);
         }
 
         //8) Are the rules stratified? (Checked as part of dependency graph generation)
         //This dependency graph is actually based on relation constants, not sentence forms (like some of the other tools here)
+        //Implemented in Griddle as NoNegativeEdgesInCyclesCheck
         SetMultimap<GdlConstant, GdlConstant> dependencyGraph =
                 getDependencyGraphAndValidateNoNegativeCycles(sentenceArities.keySet(), rules);
 
         //9) We check that all the keywords are related to one another correctly, according to the dependency graph
+        //TODO: Add to Griddle
         checkKeywordLocations(dependencyGraph, sentenceArities.keySet());
 
         //10) We check the restriction on functions and recursion
@@ -173,11 +180,61 @@ public class StaticValidator implements GameValidator {
             checkRecursionFunctionRestriction(rule, ancestorsGraph);
         }
 
+        //Implemented in Griddle as UnproducedSentenceNamesCheck
         checkSentencesUsedInRuleBodiesAreDefinedSomewhere(rules, relations, warnings);
+
+        checkForCaseInsensitiveOverlaps(description, rules, warnings);
 
         return warnings;
     }
 
+    /**
+     * Look for any constants (across the whole game) or variables (within rules) that
+     * would be treated differently by case-sensitive and case-insensitive gamers.
+     */
+    //This is implemented in Griddle as the InconsistentCapitalizationCheck.
+    private static void checkForCaseInsensitiveOverlaps(List<Gdl> description,
+            List<GdlRule> rules, List<ValidatorWarning> warnings) {
+        if (!GdlPool.caseSensitive) {
+            warnings.add(new ValidatorWarning("Can't check for case sensitivity warnings, "
+                    + "as game was loaded with a case-insensitive GdlPool."));
+        }
+        final Set<GdlConstant> constants = Sets.newHashSet();
+        GdlVisitors.visitAll(description, new GdlVisitor() {
+            @Override
+            public void visitConstant(GdlConstant constant) {
+                constants.add(constant);
+            }
+        });
+        checkForCaseInsensitiveOverlaps(constants, warnings);
+        for (GdlRule rule : rules) {
+            final Set<GdlVariable> variables = Sets.newHashSet();
+            GdlVisitors.visitAll(rule, new GdlVisitor() {
+                @Override
+                public void visitVariable(GdlVariable variable) {
+                    variables.add(variable);
+                }
+            });
+            checkForCaseInsensitiveOverlaps(variables, warnings);
+        }
+    }
+
+    private static void checkForCaseInsensitiveOverlaps(
+            Set<? extends GdlTerm> terms, List<ValidatorWarning> warnings) {
+        for (GdlTerm term1 : terms) {
+            for (GdlTerm term2 : terms) {
+                if (term1 != term2 && term1.toString().equalsIgnoreCase(term2.toString())
+                        //Trick to prevent the same pair from showing up twice
+                        && term1.toString().compareTo(term2.toString()) < 0) {
+                    warnings.add(new ValidatorWarning("Game description uses both " + term1
+                            + " and " + term2 + ", which will be interpreted differently by "
+                            + "case-sensitive and case-insensitive gamers."));
+                }
+            }
+        }
+    }
+
+    //Implemented in Griddle as SentenceAndFunctionNamesDifferCheck
     private static void checkSentenceFunctionNameOverlap(
             Map<GdlConstant, Integer> sentenceArities,
             Map<GdlConstant, Integer> functionArities,
@@ -191,6 +248,7 @@ public class StaticValidator implements GameValidator {
         }
     }
 
+    //Implemented in Griddle as EmptyBodyCheck
     private static void verifyNonZeroArities(List<GdlRelation> relations,
             List<GdlRule> rules) throws ValidatorException {
         GdlVisitor arityCheckingVisitor = new GdlVisitor() {
@@ -236,6 +294,7 @@ public class StaticValidator implements GameValidator {
      * line number of an unmatched parenthesis is included in the error
      * message.
      */
+    //Implemented in Griddle as the ParenthesesValidator.
     public static void matchParentheses(File file) throws ValidatorException {
         List<String> lines = new ArrayList<String>();
         try (BufferedReader in = new BufferedReader(new FileReader(file))) {
@@ -277,6 +336,7 @@ public class StaticValidator implements GameValidator {
         }
     }
 
+    //This is implemented in Griddle as the OriginalRecursionRestrictionCheck.
     private static void checkRecursionFunctionRestriction(GdlRule rule,
             Map<GdlConstant, Set<GdlConstant>> ancestorsGraph) throws ValidatorException {
         //TODO: This might not work 100% correctly with descriptions with
@@ -516,11 +576,12 @@ public class StaticValidator implements GameValidator {
         }
     }
 
-
+    //Griddle implements this check in ContainsRoleTerminalGoalLegalCheck,
+    //KeywordArityCheck, and KeywordsAreSentenceNamesCheck.
     private static void testPredefinedArities(
             Map<GdlConstant, Integer> sentenceArities,
             Map<GdlConstant, Integer> functionArities) throws ValidatorException {
-        if(!sentenceArities.containsKey(ROLE)) {
+        if (!sentenceArities.containsKey(ROLE)) {
             throw new ValidatorException("No role relations found in the game description");
         } else if(sentenceArities.get(ROLE) != 1) {
             throw new ValidatorException("The role relation should have arity 1 (argument: the player name)");
@@ -617,7 +678,7 @@ public class StaticValidator implements GameValidator {
         }
     }
 
-
+    //Implemented in Griddle as NegationContainsSentenceCheck
     private static void testLiteralForImproperNegation(GdlLiteral literal) throws ValidatorException {
         if(literal instanceof GdlNot) {
             GdlNot not = (GdlNot) literal;

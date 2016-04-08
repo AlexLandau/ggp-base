@@ -4,9 +4,13 @@ apply plugin: 'checkstyle'
 apply plugin: 'idea'
 apply plugin: 'scala'
 
-// We compile using Java 7.
-sourceCompatibility = 1.7
-targetCompatibility = 1.7
+// We compile using Java 8.
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
 
 /*
  * For now, instead of using an online library repository (e.g. Maven), we keep
@@ -14,6 +18,11 @@ targetCompatibility = 1.7
  * during setup.
  */
 dependencies {
+    compile 'com.google.code.findbugs:jsr305:3.0.0'
+    compile 'net.alloyggp:escape-rope:0.0.2'
+    compile 'net.sf.saxon:Saxon-HE:9.5.1-8'
+    compile 'net.sf.trove4j:trove4j:3.0.3'
+    compile 'org.jsoup:jsoup:1.8.3'
     compile 'org.scala-lang:scala-library:2.11.7'
     compile files(
         'lib/Guava/guava-14.0.1.jar',
@@ -29,13 +38,6 @@ dependencies {
         'lib/JUnit/junit-4.11.jar',
         'lib/JUnit/hamcrest-core-1.3.jar',
     )
-}
-
-//Checkstyle does need a repository to be defined to work. This is only
-//required to check that the code works from the command line, not to run
-//applications from the command line.
-repositories {
-    mavenCentral()
 }
 
 /*

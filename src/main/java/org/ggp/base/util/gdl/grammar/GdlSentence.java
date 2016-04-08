@@ -2,7 +2,7 @@ package org.ggp.base.util.gdl.grammar;
 
 import java.util.List;
 
-@SuppressWarnings("serial")
+@SuppressWarnings("serial") //abstract
 public abstract class GdlSentence extends GdlLiteral
 {
 
@@ -21,5 +21,7 @@ public abstract class GdlSentence extends GdlLiteral
     public abstract GdlTerm toTerm();
 
     public abstract List<GdlTerm> getBody();
+
+    public abstract GdlSentence withName(GdlConstant newName);
 
 }

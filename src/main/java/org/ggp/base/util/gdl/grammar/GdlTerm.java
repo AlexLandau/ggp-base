@@ -1,7 +1,9 @@
 package org.ggp.base.util.gdl.grammar;
 
-@SuppressWarnings("serial")
-public abstract class GdlTerm extends Gdl
+import org.ggp.base.util.ruleengine.RuleEngineMove;
+
+@SuppressWarnings("serial") //abstract
+public abstract class GdlTerm extends Gdl implements RuleEngineMove
 {
 
     @Override

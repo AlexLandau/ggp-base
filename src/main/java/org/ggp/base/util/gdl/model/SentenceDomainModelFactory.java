@@ -10,6 +10,8 @@ public class SentenceDomainModelFactory {
     }
 
     public static ImmutableSentenceDomainModel createWithCartesianDomains(List<Gdl> description) throws InterruptedException {
+        //TODO: Require somehow that the input to this has come through the
+        //VariableConstrainer already
         ImmutableSentenceFormModel formModel = SentenceFormModelFactory.create(description);
 
         SentenceFormsFinder sentenceFormsFinder = new SentenceFormsFinder(formModel.getDescription());

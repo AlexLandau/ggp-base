@@ -14,6 +14,8 @@ import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
 
+import javax.annotation.Nullable;
+
 import org.ggp.base.util.gdl.GdlUtils;
 import org.ggp.base.util.gdl.grammar.GdlConstant;
 import org.ggp.base.util.gdl.grammar.GdlDistinct;
@@ -83,7 +85,7 @@ public class AssignmentsImpl implements Assignments {
     public AssignmentsImpl(Map<GdlVariable, GdlConstant> headAssignment,
             GdlRule rule, Map<GdlVariable, Set<GdlConstant>> varDomains,
             Map<SentenceForm, ? extends FunctionInfo> functionInfoMap,
-            Map<SentenceForm, ? extends Collection<GdlSentence>> completedSentenceFormValues) {
+            @Nullable Map<SentenceForm, ? extends Collection<GdlSentence>> completedSentenceFormValues) {
         empty = false;
         this.headAssignment = headAssignment;
 

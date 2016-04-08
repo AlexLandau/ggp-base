@@ -146,4 +146,13 @@ public class AssignmentFunction {
         }
         return answer;
     }
+
+    @Override
+    public String toString() {
+        return "AssignmentFunction [internalFunctions=" + internalFunctions
+                + ", querySize=" + querySize + ", isInputConstant="
+                + isInputConstant + ", queryConstants=" + queryConstants
+                + ", queryInputIndices=" + queryInputIndices
+                + ", function=" + function + "]";
+    }
 }

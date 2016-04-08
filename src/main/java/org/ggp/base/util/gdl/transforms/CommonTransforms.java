@@ -168,4 +168,33 @@ public class CommonTransforms {
     public static GdlRelation replaceHead(GdlRelation sentence, GdlConstant newHead) {
         return GdlPool.getRelation(newHead, sentence.getBody());
     }
+    /**
+     * Replaces only sentence and function names, not the other contents of the sentence.
+     */
+    public static GdlSentence replaceNames(GdlSentence sentence,
+            Map<GdlConstant, GdlConstant> constantRenames) {
+        GdlConstant newHead = constantRenames.get(sentence.getName());
+        if (sentence instanceof GdlProposition) {
+            return GdlPool.getProposition(newHead);
+        } else {
+            List<GdlTerm> newBody = replaceNames(sentence.getBody(), constantRenames);
+            return GdlPool.getRelation(newHead, newBody);
+        }
+    }
+    private static List<GdlTerm> replaceNames(List<GdlTerm> body,
+            Map<GdlConstant, GdlConstant> constantRenames) {
+        List<GdlTerm> newBody = Lists.newArrayList();
+        for (GdlTerm term : body) {
+            if (term instanceof GdlFunction) {
+                GdlFunction function = (GdlFunction) term;
+                GdlConstant newName = constantRenames.get(function.getName());
+                List<GdlTerm> newFnBody = replaceNames(function.getBody(), constantRenames);
+                GdlFunction newFunction = GdlPool.getFunction(newName, newFnBody);
+                newBody.add(newFunction);
+            } else {
+                newBody.add(term);
+            }
+        }
+        return newBody;
+    }
 }

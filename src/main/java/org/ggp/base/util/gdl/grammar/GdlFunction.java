@@ -4,9 +4,9 @@ import java.util.List;
 
 import com.google.common.collect.ImmutableList;
 
-@SuppressWarnings("serial")
 public final class GdlFunction extends GdlTerm
 {
+    private static final long serialVersionUID = 1L;
 
     private final ImmutableList<GdlTerm> body;
     private transient Boolean ground;

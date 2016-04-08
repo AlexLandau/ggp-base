@@ -1,8 +1,12 @@
 package org.ggp.base.util.propnet.architecture;
 
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+
+import com.google.common.base.Function;
+import com.google.common.collect.Collections2;
 
 /**
  * The root class of the Component hierarchy, which is designed to represent
@@ -24,8 +28,8 @@ public abstract class Component implements Serializable
      */
     public Component()
     {
-        this.inputs = new HashSet<Component>();
-        this.outputs = new HashSet<Component>();
+        this.inputs = new HashSet<Component>(1);
+        this.outputs = new HashSet<Component>(1);
     }
 
     /**
@@ -151,6 +155,17 @@ public abstract class Component implements Serializable
         }
 
         return sb.toString();
+    }
+
+    public abstract String getShortName();
+
+    public static Collection<String> toShortNames(Collection<Component> components) {
+        return Collections2.transform(components, new Function<Component, String>() {
+            @Override
+            public String apply(Component input) {
+                return input.getShortName();
+            }
+        });
     }
 
 }

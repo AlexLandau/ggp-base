@@ -12,4 +12,9 @@ public class WorkingResponseSelectedEvent extends Event {
     public String getWorkingResponse() {
         return theResponse;
     }
+
+    @Override
+    public String toString() {
+        return "Working response selected event: " + theResponse;
+    }
 }

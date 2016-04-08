@@ -3,12 +3,12 @@ package org.ggp.base.util.gdl.grammar;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -36,6 +36,16 @@ public final class GdlPool
     private static final ConcurrentMap<GdlConstant, ConcurrentMap<List<GdlTerm>, GdlRelation>> relationPool = new ConcurrentHashMap<GdlConstant, ConcurrentMap<List<GdlTerm>, GdlRelation>>();
     private static final ConcurrentMap<GdlSentence, ConcurrentMap<List<GdlLiteral>, GdlRule>> rulePool = new ConcurrentHashMap<GdlSentence, ConcurrentMap<List<GdlLiteral>, GdlRule>>();
     private static final ConcurrentMap<String, GdlVariable> variablePool = new ConcurrentHashMap<String, GdlVariable>();
+
+    //Constant IDs are even, variable IDs are odd
+    private static final AtomicInteger nextVariableId = new AtomicInteger(1);
+    private static final AtomicInteger nextConstantId = new AtomicInteger(2);
+    private static final List<GdlTerm> termsById = new ArrayList<GdlTerm>();
+
+    public static boolean isVariableId(int id) {
+        return ((id % 2) != 0);
+    }
+
     private static final ConcurrentMap<String, GdlConstant> constantPool = new ConcurrentHashMap<String, GdlConstant>();
     //Access to constantCases and variableCases should be synchronized using their monitor locks.
     private static final Map<String,String> constantCases = new TreeMap<String,String>(String.CASE_INSENSITIVE_ORDER);
@@ -89,30 +99,32 @@ public final class GdlPool
         propositionPool.clear();
         relationPool.clear();
         rulePool.clear();
-        variablePool.clear();
-        synchronized (variableCases) {
-            variableCases.clear();
-        }
-
-        // When draining the pool between matches, we still need to preserve the keywords
-        // since there are global references to them. For example, the Prover state machine
-        // has a reference to the GdlConstant "true", and that reference must still point
-        // to the authoritative GdlConstant "true" after the pool is drained and another
-        // game has begun. As such, when draining the constant pool, these special keywords
-        // are set aside and returned to the pool after all of the other constants (which
-        // were game-specific) have been drained.
-        Map<String, GdlConstant> keywordConstants = new HashMap<String, GdlConstant>();
-        for (String keyword : KEYWORDS) {
-            keywordConstants.put(keyword, GdlPool.getConstant(keyword));
-        }
-        synchronized (constantCases) {
-            constantPool.clear();
-            constantCases.clear();
-            for (Map.Entry<String,GdlConstant> keywordEntry : keywordConstants.entrySet()) {
-                constantCases.put(keywordEntry.getKey(), keywordEntry.getKey());
-                constantPool.put(keywordEntry.getKey(), keywordEntry.getValue());
-            }
-        }
+        //Don't drain the variablePool because we don't want to
+        //keep assigning new IDs for the same variables.
+        //	    variablePool.clear();
+        //	    synchronized (variableCases) {
+        //	    	variableCases.clear();
+        //	    }
+        //
+        //	    // When draining the pool between matches, we still need to preserve the keywords
+        //	    // since there are global references to them. For example, the Prover state machine
+        //	    // has a reference to the GdlConstant "true", and that reference must still point
+        //	    // to the authoritative GdlConstant "true" after the pool is drained and another
+        //	    // game has begun. As such, when draining the constant pool, these special keywords
+        //	    // are set aside and returned to the pool after all of the other constants (which
+        //	    // were game-specific) have been drained.
+        //	    Map<String, GdlConstant> keywordConstants = new HashMap<String, GdlConstant>();
+        //	    for (String keyword : KEYWORDS) {
+        //	    	keywordConstants.put(keyword, GdlPool.getConstant(keyword));
+        //	    }
+        //	    synchronized (constantCases) {
+        //	    	constantPool.clear();
+        //	    	constantCases.clear();
+        //	    	for (Map.Entry<String,GdlConstant> keywordEntry : keywordConstants.entrySet()) {
+        //	    		constantCases.put(keywordEntry.getKey(), keywordEntry.getKey());
+        //	    		constantPool.put(keywordEntry.getKey(), keywordEntry.getValue());
+        //	    	}
+        //	    }
     }
 
     /**
@@ -127,10 +139,38 @@ public final class GdlPool
      */
     private static <K,V> V addToPool(K key, V value, ConcurrentMap<K, V> pool) {
         V prevValue = pool.putIfAbsent(key, value);
-        if(prevValue == null)
+        if (prevValue == null) {
+            if (value instanceof GdlTerm) {
+                addToTermsById((GdlTerm)value);
+            }
             return value;
-        else
+        } else {
             return prevValue;
+        }
+    }
+
+    private static void addToTermsById(GdlTerm value) {
+        int id;
+        if (value instanceof GdlConstant) {
+            id = ((GdlConstant) value).getId();
+        } else if (value instanceof GdlVariable) {
+            id = ((GdlVariable) value).getId();
+        } else {
+            return;
+        }
+        synchronized (termsById) {
+            int size = termsById.size();
+            if (id < size) {
+                termsById.set(id, value);
+            } else if (id == size) {
+                termsById.add(value);
+            } else { // id > size
+                while (id > termsById.size()) {
+                    termsById.add(null);
+                }
+                termsById.add(value);
+            }
+        }
     }
 
     public static GdlConstant getConstant(String value)
@@ -150,7 +190,8 @@ public final class GdlPool
 
         GdlConstant ret = constantPool.get(value);
         if(ret == null)
-            ret = addToPool(value, new GdlConstant(value), constantPool);
+            ret = addToPool(value, new GdlConstant(value, nextConstantId.getAndAdd(2)), constantPool);
+
         return ret;
     }
 
@@ -168,7 +209,7 @@ public final class GdlPool
 
         GdlVariable ret = variablePool.get(name);
         if(ret == null)
-            ret = addToPool(name, new GdlVariable(name), variablePool);
+            ret = addToPool(name, new GdlVariable(name, nextVariableId.getAndAdd(2)), variablePool);
         return ret;
     }
 
@@ -258,7 +299,7 @@ public final class GdlPool
         return getRelation(name, Arrays.asList(body));
     }
 
-    public static GdlRelation getRelation(GdlConstant name, List<GdlTerm> body)
+    public static GdlRelation getRelation(GdlConstant name, List<? extends GdlTerm> body)
     {
         ConcurrentMap<List<GdlTerm>, GdlRelation> bucket = relationPool.get(name);
         if(bucket == null) {
@@ -289,8 +330,10 @@ public final class GdlPool
     public static GdlRule getRule(GdlSentence head, List<GdlLiteral> body)
     {
         ConcurrentMap<List<GdlLiteral>, GdlRule> bucket = rulePool.get(head);
-        if(bucket == null)
-            bucket = addToPool(head, new ConcurrentHashMap<List<GdlLiteral>, GdlRule>(), rulePool);
+        if (bucket == null) {
+            ConcurrentMap<List<GdlLiteral>, GdlRule> newMap = new MapMaker().softValues().makeMap();
+            bucket = addToPool(head, newMap, rulePool);
+        }
 
         GdlRule ret = bucket.get(body);
         if(ret == null) {
@@ -299,6 +342,16 @@ public final class GdlPool
         }
 
         return ret;
+    }
+
+    public static GdlTerm getTermById(int id) {
+        synchronized (termsById) {
+            GdlTerm result = termsById.get(id);
+            if (result == null) {
+                throw new RuntimeException("Term with id " + id + " not found");
+            }
+            return result;
+        }
     }
 
     /**
@@ -311,49 +364,50 @@ public final class GdlPool
      * GdlPool, immerse should only need to be called on GDL that appears from
      * outside sources: for example, being deserialized from a file.
      */
-    public static Gdl immerse(Gdl foreignGdl) {
+    @SuppressWarnings("unchecked") //Cast to T for convenience; it works here
+    public static <T extends Gdl> T immerse(T foreignGdl) {
         if(foreignGdl instanceof GdlDistinct) {
-            return GdlPool.getDistinct((GdlTerm)immerse(((GdlDistinct) foreignGdl).getArg1()), (GdlTerm)immerse(((GdlDistinct) foreignGdl).getArg2()));
+            return (T) GdlPool.getDistinct(immerse(((GdlDistinct) foreignGdl).getArg1()), immerse(((GdlDistinct) foreignGdl).getArg2()));
         } else if(foreignGdl instanceof GdlNot) {
-            return GdlPool.getNot((GdlLiteral)immerse(((GdlNot) foreignGdl).getBody()));
+            return (T) GdlPool.getNot(immerse(((GdlNot) foreignGdl).getBody()));
         } else if(foreignGdl instanceof GdlOr) {
             GdlOr or = (GdlOr)foreignGdl;
             List<GdlLiteral> rval = new ArrayList<GdlLiteral>();
             for(int i=0; i<or.arity(); i++)
             {
-                rval.add((GdlLiteral) immerse(or.get(i)));
+                rval.add(immerse(or.get(i)));
             }
-            return GdlPool.getOr(rval);
+            return (T) GdlPool.getOr(rval);
         } else if(foreignGdl instanceof GdlProposition) {
-            return GdlPool.getProposition((GdlConstant)immerse(((GdlProposition) foreignGdl).getName()));
+            return (T) GdlPool.getProposition(immerse(((GdlProposition) foreignGdl).getName()));
         } else if(foreignGdl instanceof GdlRelation) {
             GdlRelation rel = (GdlRelation)foreignGdl;
             List<GdlTerm> rval = new ArrayList<GdlTerm>();
             for(int i=0; i<rel.arity(); i++)
             {
-                rval.add((GdlTerm) immerse(rel.get(i)));
+                rval.add(immerse(rel.get(i)));
             }
-            return GdlPool.getRelation((GdlConstant)immerse(rel.getName()), rval);
+            return (T) GdlPool.getRelation(immerse(rel.getName()), rval);
         } else if(foreignGdl instanceof GdlRule) {
             GdlRule rule = (GdlRule)foreignGdl;
             List<GdlLiteral> rval = new ArrayList<GdlLiteral>();
             for(int i=0; i<rule.arity(); i++)
             {
-                rval.add((GdlLiteral) immerse(rule.get(i)));
+                rval.add(immerse(rule.get(i)));
             }
-            return GdlPool.getRule((GdlSentence) immerse(rule.getHead()), rval);
+            return (T) GdlPool.getRule(immerse(rule.getHead()), rval);
         } else if(foreignGdl instanceof GdlConstant) {
-            return GdlPool.getConstant(((GdlConstant) foreignGdl).getValue());
+            return (T) GdlPool.getConstant(((GdlConstant) foreignGdl).getValue());
         } else if(foreignGdl instanceof GdlFunction) {
             GdlFunction func = (GdlFunction)foreignGdl;
             List<GdlTerm> rval = new ArrayList<GdlTerm>();
             for(int i=0; i<func.arity(); i++)
             {
-                rval.add((GdlTerm) immerse(func.get(i)));
+                rval.add(immerse(func.get(i)));
             }
-            return GdlPool.getFunction((GdlConstant) immerse(func.getName()), rval);
+            return (T) GdlPool.getFunction(immerse(func.getName()), rval);
         } else if(foreignGdl instanceof GdlVariable) {
-            return GdlPool.getVariable(((GdlVariable) foreignGdl).getName());
+            return (T) GdlPool.getVariable(((GdlVariable) foreignGdl).getName());
         } else
             throw new RuntimeException("Uh oh, gdl hierarchy must have been extended without updating this code.");
     }

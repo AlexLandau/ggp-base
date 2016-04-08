@@ -4,6 +4,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.ggp.base.util.concurrency.ConcurrencyUtils;
 import org.ggp.base.util.gdl.GdlUtils;
@@ -21,6 +22,7 @@ import org.ggp.base.util.gdl.grammar.GdlSentence;
 import org.ggp.base.util.gdl.grammar.GdlTerm;
 import org.ggp.base.util.gdl.grammar.GdlVariable;
 import org.ggp.base.util.gdl.model.SentenceDomainModels.VarDomainOpts;
+import org.ggp.base.util.gdl.transforms.ConstantChecker;
 import org.ggp.base.util.gdl.transforms.VariableConstrainer;
 
 import com.google.common.base.Function;
@@ -323,6 +325,19 @@ public class SentenceDomainModelOptimizer {
                         }
                         return curDomains.get(form).get(slotIndex);
                     }
+
+                    @Override
+                    public Map<GdlConstant, Set<GdlConstant>> getDomainsForSlotGivenValuesOfOtherSlot(
+                            int slotOfInterest, int inputSlot) {
+                        return CartesianSentenceFormDomain.getCartesianMapForDomains(
+                                getDomainForSlot(inputSlot),
+                                getDomainForSlot(slotOfInterest));
+                    }
+
+                    @Override
+                    public int getDomainSize() {
+                        throw new UnsupportedOperationException();
+                    }
                 };
             }}, VarDomainOpts.INCLUDE_HEAD);
     }
@@ -399,7 +414,8 @@ public class SentenceDomainModelOptimizer {
 
         for (int i = 0; i < tuple.size(); i++) {
             if (tuple.get(i) == curVar) {
-                Preconditions.checkNotNull(neededConstantsByForm.get(form));
+                Preconditions.checkNotNull(neededConstantsByForm.get(form), "missing form is " + form +
+                        "; forms are: " + neededConstantsByForm.keySet());
                 Preconditions.checkNotNull(neededAndPossibleConstants);
                 somethingChanged |= neededConstantsByForm.get(form).putAll(i, neededAndPossibleConstants);
             }
@@ -506,14 +522,109 @@ public class SentenceDomainModelOptimizer {
 
     private static ImmutableSentenceDomainModel toSentenceDomainModel(
             Map<SentenceForm, SetMultimap<Integer, GdlConstant>> neededAndPossibleConstantsByForm,
-            SentenceFormModel formModel) throws InterruptedException {
+            SentenceDomainModel oldModel) throws InterruptedException {
         Map<SentenceForm, SentenceFormDomain> domains = Maps.newHashMap();
-        for (SentenceForm form : formModel.getSentenceForms()) {
+        for (SentenceForm form : oldModel.getSentenceForms()) {
             ConcurrencyUtils.checkForInterruption();
-            domains.put(form, CartesianSentenceFormDomain.create(form,
-                    neededAndPossibleConstantsByForm.get(form)));
+            SentenceFormDomain cartesianDomain = CartesianSentenceFormDomain.create(form,
+                    neededAndPossibleConstantsByForm.get(form));
+            domains.put(form, reconcileDomains(oldModel.getDomain(form), cartesianDomain));
         }
 
-        return ImmutableSentenceDomainModel.create(formModel, domains);
+        return ImmutableSentenceDomainModel.create(oldModel, domains);
+    }
+
+    private static SentenceFormDomain reconcileDomains(
+            SentenceFormDomain domain, SentenceFormDomain cartesianDomain) {
+        int oldSize = domain.getDomainSize();
+        int newSize = cartesianDomain.getDomainSize();
+        if (newSize <= oldSize) {
+            return cartesianDomain;
+        } else {
+            //TODO: Remove entries that contradict the Cartesian domain?
+            return domain;
+        }
+    }
+
+    public static SentenceDomainModel restrictDomainsUsingBasesAndInputs(
+            SentenceDomainModel domainModel, ConstantChecker constantChecker) {
+        Map<SentenceForm, SentenceFormDomain> domainsToUpdate = Maps.newHashMap();
+        if (hasBasesDefined(domainModel)) {
+            domainsToUpdate.putAll(getBaseDefinedDomains(constantChecker));
+        }
+        if (hasInputsDefined(domainModel)) {
+            domainsToUpdate.putAll(getInputDefinedDomains(constantChecker));
+        }
+        return replaceSomeDomains(domainModel, domainsToUpdate);
+    }
+
+    private static SentenceDomainModel replaceSomeDomains(
+            SentenceDomainModel domainModel,
+            Map<SentenceForm, SentenceFormDomain> domainsToUpdate) {
+        Map<SentenceForm, SentenceFormDomain> domains = Maps.newHashMap();
+        for (SentenceForm form : domainModel.getSentenceForms()) {
+            if (domainsToUpdate.containsKey(form)) {
+                domains.put(form, domainsToUpdate.get(form));
+            } else {
+                domains.put(form, domainModel.getDomain(form));
+            }
+        }
+
+        return ImmutableSentenceDomainModel.create(domainModel, domains);
+    }
+
+    private static Map<SentenceForm, SentenceFormDomain> getBaseDefinedDomains(
+            ConstantChecker constantChecker) {
+        Map<SentenceForm, SentenceFormDomain> baseDefinedDomains = Maps.newHashMap();
+        for (SentenceForm form : constantChecker.getConstantSentenceForms()) {
+            if (form.getName() == GdlPool.BASE) {
+                Set<GdlSentence> baseSentences = constantChecker.getTrueSentences(form);
+                addDomainWithNewName(GdlPool.TRUE, baseDefinedDomains, form, baseSentences);
+                addDomainWithNewName(GdlPool.NEXT, baseDefinedDomains, form, baseSentences);
+            }
+        }
+        return baseDefinedDomains;
+    }
+
+    public static void addDomainWithNewName(GdlConstant newName,
+            Map<SentenceForm, SentenceFormDomain> baseDefinedDomains,
+            SentenceForm form, Set<GdlSentence> baseSentences) {
+        SentenceForm newNameForm = form.withName(newName);
+        Set<GdlSentence> newNameSentences = baseSentences.stream()
+                .map(s -> s.withName(newName))
+                .collect(Collectors.toSet());
+        FullSentenceFormDomain newNameDomain = FullSentenceFormDomain.create(newNameForm, newNameSentences);
+        baseDefinedDomains.put(newNameForm, newNameDomain);
+    }
+
+    private static Map<SentenceForm, SentenceFormDomain> getInputDefinedDomains(
+            ConstantChecker constantChecker) {
+        Map<SentenceForm, SentenceFormDomain> inputDefinedDomains = Maps.newHashMap();
+        for (SentenceForm form : constantChecker.getConstantSentenceForms()) {
+            if (form.getName() == GdlPool.INPUT) {
+                Set<GdlSentence> inputSentences = constantChecker.getTrueSentences(form);
+                addDomainWithNewName(GdlPool.DOES, inputDefinedDomains, form, inputSentences);
+                addDomainWithNewName(GdlPool.LEGAL, inputDefinedDomains, form, inputSentences);
+            }
+        }
+        return inputDefinedDomains;
+    }
+
+    private static boolean hasBasesDefined(SentenceDomainModel domainModel) {
+        for (SentenceForm form : domainModel.getConstantSentenceForms()) {
+            if (form.getName() == GdlPool.BASE) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean hasInputsDefined(SentenceDomainModel domainModel) {
+        for (SentenceForm form : domainModel.getConstantSentenceForms()) {
+            if (form.getName() == GdlPool.INPUT) {
+                return true;
+            }
+        }
+        return false;
     }
 }

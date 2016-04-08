@@ -22,7 +22,6 @@ import org.ggp.base.util.gdl.grammar.GdlVariable;
 //Cleans up various issues with games to make them more standardized.
 public class GdlCleaner {
     private static final int MAX_ITERATIONS = 100;
-    private static final GdlConstant BASE = GdlPool.getConstant("base");
 
     private GdlCleaner() {
     }
@@ -96,7 +95,7 @@ public class GdlCleaner {
         for (Gdl gdl : description) {
             if (gdl instanceof GdlRelation) {
                 GdlRelation relation = (GdlRelation) gdl;
-                if (relation.getName() == BASE && relation.arity() != 1) {
+                if (relation.getName() == GdlPool.BASE && relation.arity() != 1) {
                     removeBaseSentences = true;
                     break;
                 }
@@ -107,7 +106,7 @@ public class GdlCleaner {
         for (Gdl gdl : description) {
             if (gdl instanceof GdlRelation) {
                 GdlRelation relation = (GdlRelation) gdl;
-                if (removeBaseSentences && relation.getName() == BASE) {
+                if (removeBaseSentences && relation.getName() == GdlPool.BASE) {
                     //Leave out the relation
                 } else {
                     newDescription.add(gdl);
@@ -224,13 +223,14 @@ public class GdlCleaner {
     }
 
     private static GdlTerm cleanParentheses(GdlTerm term) {
-        if(term instanceof GdlConstant || term instanceof GdlVariable)
+        if (term instanceof GdlConstant || term instanceof GdlVariable)
             return term;
-        if(term instanceof GdlFunction) {
+        if (term instanceof GdlFunction) {
             GdlFunction function = (GdlFunction) term;
             //The whole point of the function
-            if(function.arity() == 0)
+            if (function.arity() == 0) {
                 return function.getName();
+            }
             List<GdlTerm> cleanedBody = new ArrayList<GdlTerm>();
             for(GdlTerm functionTerm : function.getBody())
                 cleanedBody.add(cleanParentheses(functionTerm));

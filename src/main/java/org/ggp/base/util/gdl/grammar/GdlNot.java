@@ -1,8 +1,8 @@
 package org.ggp.base.util.gdl.grammar;
 
-@SuppressWarnings("serial")
 public final class GdlNot extends GdlLiteral
 {
+    private static final long serialVersionUID = 1L;
 
     private final GdlLiteral body;
     private transient Boolean ground;

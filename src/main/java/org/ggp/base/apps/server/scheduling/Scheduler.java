@@ -65,7 +65,7 @@ public final class Scheduler implements Observer
 
     private synchronized boolean canSchedule(PendingMatch spec) {
         for (PlayerPresence player : spec.thePlayers) {
-            if (!player.getStatus().toLowerCase().equals("available")) {
+            if (!player.getStatus().equalsIgnoreCase("available")) {
                 return false;
             }
             if (activePlayers.contains(player.getName())) {

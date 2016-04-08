@@ -84,7 +84,7 @@ public interface SentenceFormModel {
     /**
      * Returns the sentence form of the given sentence.
      */
-    SentenceForm getSentenceForm(GdlSentence transformed);
+    SentenceForm getSentenceForm(GdlSentence sentence);
 
     /**
      * Returns the game description for the game.

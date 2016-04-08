@@ -28,7 +28,13 @@ public final class GamePlayer extends Thread implements Subject
     private ServerSocket listener;
     private final List<Observer> observers;
 
-    public GamePlayer(int port, Gamer gamer) throws IOException
+    public static enum BadPortBehavior {
+        FIND_AN_OPEN_PORT,
+        FAIL_IF_NOT_AVAILABLE
+    }
+
+    public GamePlayer(int port, Gamer gamer,
+            BadPortBehavior portBehavior) throws IOException
     {
         observers = new ArrayList<Observer>();
         listener = null;
@@ -37,6 +43,9 @@ public final class GamePlayer extends Thread implements Subject
             try {
                 listener = new ServerSocket(port);
             } catch (IOException ex) {
+                if (portBehavior == BadPortBehavior.FAIL_IF_NOT_AVAILABLE) {
+                    throw new IOException(ex);
+                }
                 listener = null;
                 port++;
                 System.err.println("Failed to start gamer on port: " + (port-1) + " trying port " + port);
@@ -102,6 +111,7 @@ public final class GamePlayer extends Thread implements Subject
                 GamerLogger.log("GamePlayer", "[Sent at " + System.currentTimeMillis() + "] " + out, GamerLogger.LOG_LEVEL_DATA_DUMP);
             } catch (Exception e) {
                 GamerLogger.log("GamePlayer", "[Dropped data at " + System.currentTimeMillis() + "] Due to " + e, GamerLogger.LOG_LEVEL_DATA_DUMP);
+                e.printStackTrace();
                 notifyObservers(new PlayerDroppedPacketEvent());
             }
         }
@@ -118,7 +128,7 @@ public final class GamePlayer extends Thread implements Subject
         }
 
         try {
-            GamePlayer player = new GamePlayer(Integer.valueOf(args[0]), new RandomGamer());
+            GamePlayer player = new GamePlayer(Integer.valueOf(args[0]), new RandomGamer(), BadPortBehavior.FIND_AN_OPEN_PORT);
             player.run();
         } catch (NumberFormatException e) {
             System.err.println("Illegal port number: " + args[0]);

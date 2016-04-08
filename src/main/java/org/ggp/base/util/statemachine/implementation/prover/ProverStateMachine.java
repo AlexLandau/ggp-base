@@ -1,16 +1,24 @@
 package org.ggp.base.util.statemachine.implementation.prover;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+
+import javax.annotation.Nullable;
 
 import org.ggp.base.util.gdl.grammar.Gdl;
 import org.ggp.base.util.gdl.grammar.GdlConstant;
 import org.ggp.base.util.gdl.grammar.GdlRelation;
 import org.ggp.base.util.gdl.grammar.GdlSentence;
 import org.ggp.base.util.logging.GamerLogger;
+import org.ggp.base.util.propnet.architecture.Component;
+import org.ggp.base.util.propnet.architecture.PropNet;
 import org.ggp.base.util.prover.Prover;
 import org.ggp.base.util.prover.aima.AimaProver;
+import org.ggp.base.util.prover.logging.LoggingAimaProver;
+import org.ggp.base.util.prover.logging.StandardProverLogger;
 import org.ggp.base.util.statemachine.MachineState;
 import org.ggp.base.util.statemachine.Move;
 import org.ggp.base.util.statemachine.Role;
@@ -26,22 +34,32 @@ import com.google.common.collect.ImmutableList;
 
 public class ProverStateMachine extends StateMachine
 {
-    private MachineState initialState;
-    private Prover prover;
-    private ImmutableList<Role> roles;
+    private final boolean experimental;
+    private volatile MachineState initialState;
+    private volatile Prover prover;
+    private volatile ImmutableList<Role> roles;
+    private volatile @Nullable StandardProverLogger log;
 
     /**
      * Initialize must be called before using the StateMachine
      */
-    public ProverStateMachine()
+    public ProverStateMachine() {
+        this(false);
+    }
+    public ProverStateMachine(boolean experimental)
     {
-
+        this.experimental = experimental;
     }
 
     @Override
     public void initialize(List<Gdl> description)
     {
-        prover = new AimaProver(description);
+        if (experimental) {
+            this.log = StandardProverLogger.create();
+            prover = new LoggingAimaProver(description, log);
+        } else {
+            prover = new AimaProver(description);
+        }
         roles = ImmutableList.copyOf(Role.computeRoles(description));
         initialState = computeInitialState();
     }
@@ -59,7 +77,7 @@ public class ProverStateMachine extends StateMachine
 
         if (results.size() != 1)
         {
-            GamerLogger.logError("StateMachine", "Got goal results of size: " + results.size() + " when expecting size one.");
+            GamerLogger.logError("StateMachine", "Got goal results of size: " + results.size() + " when expecting size one. Results were: " + results);
             throw new GoalDefinitionException(state, role);
         }
 
@@ -121,5 +139,58 @@ public class ProverStateMachine extends StateMachine
     public boolean isTerminal(MachineState state)
     {
         return prover.prove(ProverQueryBuilder.getTerminalQuery(), ProverQueryBuilder.getContext(state));
+    }
+
+    @Override
+    public StateMachine getSynchronizedCopy() {
+        return this;
+    }
+
+    @Override
+    public Map<Role, Move> getGebMoves(MachineState state) {
+        return Collections.emptyMap();
+    }
+
+    @Override
+    public MachineState translateState(MachineState state) {
+        if (isNative(state)) {
+            return state;
+        }
+        throw new UnsupportedOperationException("Can't translate this MachineState type: " + state.getClass());
+    }
+
+    @Override
+    public boolean isNative(MachineState state) {
+        //Just needs to implement getContents()
+        try {
+            return state.getContents() != null;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    @Override
+    public boolean isPropNetBased() {
+        return false;
+    }
+
+    @Override
+    public PropNet getPropNet() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean getComponentValue(MachineState state, Component component) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int getComponentTrueInputsCount(MachineState state,
+            Component component) {
+        throw new UnsupportedOperationException();
+    }
+
+    public @Nullable StandardProverLogger getLogger() {
+        return log;
     }
 }

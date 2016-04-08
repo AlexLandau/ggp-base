@@ -24,8 +24,8 @@ public class AssignmentsFactory {
     }
 
     public static Assignments getAssignmentsForRule(GdlRule rule,
-                                                    SentenceDomainModel model, Map<SentenceForm, FunctionInfo> functionInfoMap,
-                                                    Map<SentenceForm, ? extends Collection<GdlSentence>> completedSentenceFormValues) {
+            SentenceDomainModel model, Map<SentenceForm, FunctionInfo> functionInfoMap,
+            Map<SentenceForm, ? extends Collection<GdlSentence>> completedSentenceFormValues) {
         return new AssignmentsImpl(rule,
                 SentenceDomainModels.getVarDomains(rule, model, VarDomainOpts.INCLUDE_HEAD),
                 functionInfoMap,

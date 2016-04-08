@@ -3,11 +3,14 @@ package org.ggp.base.util.gdl.model;
 import java.util.List;
 import java.util.Map;
 
+import org.ggp.base.util.gdl.factory.GdlFactory;
+import org.ggp.base.util.gdl.factory.exceptions.GdlFormatException;
 import org.ggp.base.util.gdl.grammar.GdlConstant;
 import org.ggp.base.util.gdl.grammar.GdlFunction;
 import org.ggp.base.util.gdl.grammar.GdlPool;
 import org.ggp.base.util.gdl.grammar.GdlSentence;
 import org.ggp.base.util.gdl.grammar.GdlTerm;
+import org.ggp.base.util.symbol.factory.exceptions.SymbolFormatException;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
@@ -45,6 +48,14 @@ public class SimpleSentenceForm extends AbstractSentenceForm {
                 arity,
                 ImmutableMap.copyOf(functions),
                 tupleSize);
+    }
+
+    public static SimpleSentenceForm create(String sentence) {
+        try {
+            return create((GdlSentence) GdlFactory.create(sentence));
+        } catch (GdlFormatException | SymbolFormatException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static SimpleSentenceForm create(GdlFunction function) {
@@ -118,6 +129,7 @@ public class SimpleSentenceForm extends AbstractSentenceForm {
         return true;
     }
 
+    //TODO: Add an interface for GdlWithBody that GdlSentence and GdlFunction both implement
     private boolean matches(GdlFunction function) {
         if (!function.getName().equals(name)) {
             return false;

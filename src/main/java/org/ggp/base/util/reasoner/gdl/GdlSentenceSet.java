@@ -3,6 +3,7 @@ package org.ggp.base.util.reasoner.gdl;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.ggp.base.util.gdl.grammar.GdlSentence;
 import org.ggp.base.util.gdl.model.SentenceForm;
@@ -32,6 +33,12 @@ public class GdlSentenceSet {
         this.functionInfoMap = Maps.newHashMap();
     }
 
+    private GdlSentenceSet(SetMultimap<SentenceForm, GdlSentence> sentences,
+            Map<SentenceForm, AddibleFunctionInfo> functionInfoMap) {
+        this.sentences = HashMultimap.create(sentences);
+        this.functionInfoMap = Maps.newHashMap(functionInfoMap);
+    }
+
     public static GdlSentenceSet create() {
         return new GdlSentenceSet();
     }
@@ -40,6 +47,10 @@ public class GdlSentenceSet {
         GdlSentenceSet result = create();
         result.putAll(sentences);
         return result;
+    }
+
+    public static GdlSentenceSet copyOf(GdlSentenceSet other) {
+        return new GdlSentenceSet(other.sentences, other.functionInfoMap);
     }
 
     /**
@@ -79,5 +90,19 @@ public class GdlSentenceSet {
      */
     public Map<SentenceForm, AddibleFunctionInfo> getFunctionInfo() {
         return Collections.unmodifiableMap(functionInfoMap);
+    }
+
+    public boolean isEmpty() {
+        return sentences.isEmpty();
+    }
+
+    public Set<SentenceForm> getSentenceForms() {
+        return sentences.keySet();
+    }
+
+    @Override
+    public String toString() {
+        return "GdlSentenceSet [sentences=" + sentences + ", functionInfoMap="
+                + functionInfoMap + "]";
     }
 }

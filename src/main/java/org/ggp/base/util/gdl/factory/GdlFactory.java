@@ -27,7 +27,13 @@ import org.ggp.base.util.symbol.grammar.SymbolList;
 
 public final class GdlFactory
 {
-
+    public static Gdl createQuietly(String string) {
+        try {
+            return create(string);
+        } catch (GdlFormatException | SymbolFormatException e) {
+            throw new RuntimeException(e);
+        }
+    }
     public static Gdl create(String string) throws GdlFormatException, SymbolFormatException
     {
         return create(SymbolFactory.create(string));

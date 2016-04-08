@@ -1,6 +1,5 @@
 package org.ggp.base.util.gdl.model;
 
-
 /**
  * An extension of the SentenceFormModel that additionally
  * includes information about the domains of sentence forms.

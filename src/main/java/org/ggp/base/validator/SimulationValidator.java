@@ -8,7 +8,7 @@ import org.ggp.base.util.statemachine.StateMachine;
 import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
-import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
+import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachineFactory;
 
 import com.google.common.collect.ImmutableList;
 
@@ -26,8 +26,7 @@ public final class SimulationValidator implements GameValidator
     @Override
     public List<ValidatorWarning> checkValidity(Game theGame) throws ValidatorException {
         for (int i = 0; i < numSimulations; i++) {
-            StateMachine stateMachine = new ProverStateMachine();
-            stateMachine.initialize(theGame.getRules());
+            StateMachine stateMachine = ProverStateMachineFactory.createNormal().buildInitializedForGame(theGame);
 
             MachineState state = stateMachine.getInitialState();
             for (int depth = 0; !stateMachine.isTerminal(state); depth++) {

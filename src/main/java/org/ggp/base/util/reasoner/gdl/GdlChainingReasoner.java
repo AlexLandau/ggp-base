@@ -26,6 +26,7 @@ import org.ggp.base.util.gdl.model.assignments.Assignments;
 import org.ggp.base.util.gdl.model.assignments.AssignmentsImpl;
 import org.ggp.base.util.gdl.model.assignments.FunctionInfo;
 import org.ggp.base.util.gdl.transforms.CommonTransforms;
+import org.ggp.base.util.gdl.transforms.ImmutableConstantChecker;
 import org.ggp.base.util.reasoner.DifferentialForwardChainingReasoner;
 
 import com.google.common.collect.ImmutableMultimap;
@@ -35,6 +36,7 @@ import com.google.common.collect.SetMultimap;
  * An implementation of a ForwardChainingReasoner that uses Gdl objects
  * directly and allows for differential processing of rules.
  */
+//This is at least effectively immutable.
 public class GdlChainingReasoner implements
                 DifferentialForwardChainingReasoner<GdlRule, GdlSentenceSet> {
     private final SentenceFormModel model;
@@ -49,6 +51,18 @@ public class GdlChainingReasoner implements
         ImmutableMultimap.Builder<SentenceForm, GdlSentence> constantsBuilder = ImmutableMultimap.builder();
         for (SentenceForm form : model.getSentenceForms()) {
             constantsBuilder.putAll(form, model.getSentencesListedAsTrue(form));
+        }
+        return new GdlChainingReasoner(model, constantsBuilder.build());
+    }
+
+    public static GdlChainingReasoner create(ImmutableConstantChecker checker) {
+        SentenceFormModel model = checker.getSentenceFormModel();
+        ImmutableMultimap.Builder<SentenceForm, GdlSentence> constantsBuilder = ImmutableMultimap.builder();
+        for (SentenceForm form : model.getSentenceForms()) {
+            constantsBuilder.putAll(form, model.getSentencesListedAsTrue(form));
+        }
+        for (SentenceForm form : checker.getConstantSentenceForms()) {
+            constantsBuilder.putAll(form, checker.getTrueSentences(form));
         }
         return new GdlChainingReasoner(model, constantsBuilder.build());
     }
@@ -188,6 +202,7 @@ public class GdlChainingReasoner implements
         for (GdlSentence chosenNewSentence : chosenNewSentences) {
             Map<GdlVariable, GdlConstant> preassignments = GdlUtils.getAssignmentMakingLeftIntoRight(chosenLiteral, chosenNewSentence);
             if (preassignments != null) {
+                //TODO: Use an AIP instead? These next two lines take most of our time
                 Assignments assignments = new AssignmentsImpl(preassignments, rule, varDomains, functionInfoMap, completedSentenceFormValues);
                 AssignmentIterator asnItr = assignments.getIterator();
                 while (asnItr.hasNext()) {

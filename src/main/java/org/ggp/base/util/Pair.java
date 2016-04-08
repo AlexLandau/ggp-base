@@ -1,5 +1,6 @@
 package org.ggp.base.util;
 
+import java.util.Comparator;
 import java.util.Map;
 
 public class Pair <L, R> {
@@ -53,5 +54,14 @@ public class Pair <L, R> {
     @Override
     public String toString() {
         return "<" + left + ", " + right + ">";
+    }
+
+    public static <L extends Comparable<L>, R> Comparator<Pair<L, R>> getLeftComparator() {
+        return new Comparator<Pair<L, R>>() {
+            @Override
+            public int compare(Pair<L, R> pair1, Pair<L, R> pair2) {
+                return pair1.left.compareTo(pair2.left);
+            }
+        };
     }
 }

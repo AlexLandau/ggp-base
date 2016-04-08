@@ -1,13 +1,14 @@
 package org.ggp.base.util.statemachine;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.ggp.base.util.gdl.grammar.Gdl;
 import org.ggp.base.util.gdl.grammar.GdlConstant;
 import org.ggp.base.util.gdl.grammar.GdlPool;
 import org.ggp.base.util.gdl.grammar.GdlRelation;
+
+import com.google.common.collect.ImmutableList;
 
 
 /**
@@ -69,7 +70,7 @@ public class Role implements Serializable
      */
     public static List<Role> computeRoles(List<? extends Gdl> description)
     {
-        List<Role> roles = new ArrayList<Role>();
+        ImmutableList.Builder<Role> roles = ImmutableList.builder();
         for (Gdl gdl : description) {
             if (gdl instanceof GdlRelation) {
                 GdlRelation relation = (GdlRelation) gdl;
@@ -78,6 +79,6 @@ public class Role implements Serializable
                 }
             }
         }
-        return roles;
+        return roles.build();
     }
 }

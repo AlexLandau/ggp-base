@@ -6,7 +6,6 @@ import org.ggp.base.util.observer.Event;
 
 public final class GamerNewMatchEvent extends Event
 {
-
     private final Match match;
     private final GdlConstant roleName;
 
@@ -26,4 +25,8 @@ public final class GamerNewMatchEvent extends Event
         return roleName;
     }
 
+    @Override
+    public String toString() {
+        return "New match event: match is " + match + "; role is " + roleName;
+    }
 }

@@ -13,7 +13,8 @@ import javax.swing.JComboBox;
 import org.ggp.base.util.game.CloudGameRepository;
 import org.ggp.base.util.game.Game;
 import org.ggp.base.util.game.GameRepository;
-import org.ggp.base.util.game.LocalGameRepository;
+import org.ggp.base.util.game.SimpleLocalGameRepository;
+import org.ggp.base.util.game.TestGameRepository;
 
 
 /**
@@ -58,21 +59,22 @@ public class GameSelector implements ActionListener {
         theRepositoryList.addItem("games.ggp.org/base");
         theRepositoryList.addItem("games.ggp.org/dresden");
         theRepositoryList.addItem("games.ggp.org/stanford");
-        theRepositoryList.addItem("Local Game Repository");
+        theRepositoryList.addItem("Test");
+        theRepositoryList.addItem("Local");
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == theRepositoryList) {
             String theRepositoryName = theRepositoryList.getSelectedItem().toString();
-            if (theCachedRepositories.containsKey(theRepositoryName)) {
+            if (theRepositoryName.equals("Test")) {
+                theSelectedRepository = new TestGameRepository();
+            } else if (theRepositoryName.equals("Local")) {
+                theSelectedRepository = SimpleLocalGameRepository.getLocalBaseRepo();
+            } else if (theCachedRepositories.containsKey(theRepositoryName)) {
                 theSelectedRepository = theCachedRepositories.get(theRepositoryName);
             } else {
-                if (theRepositoryName.equals("Local Game Repository")) {
-                    theSelectedRepository = new LocalGameRepository();
-                } else {
-                    theSelectedRepository = new CloudGameRepository(theRepositoryName);
-                }
+                theSelectedRepository = new CloudGameRepository(theRepositoryName);
                 theCachedRepositories.put(theRepositoryName, theSelectedRepository);
             }
             repopulateGameList();
@@ -89,17 +91,21 @@ public class GameSelector implements ActionListener {
         Collections.sort(theKeyList);
         theGameList.removeAllItems();
         for (String theKey : theKeyList) {
-            Game theGame = theRepository.getGame(theKey);
-            if (theGame == null) {
-                continue;
+            try {
+                Game theGame = theRepository.getGame(theKey);
+                if (theGame == null) {
+                    continue;
+                }
+                String theName = theGame.getName();
+                if (theName == null) {
+                    theName = theKey;
+                }
+                if (theName.length() > 24)
+                    theName = theName.substring(0, 24) + "...";
+                theGameList.addItem(new NamedItem(theKey, theName));
+            } catch (RuntimeException e) {
+                //Ignore; it just wasn't a game
             }
-            String theName = theGame.getName();
-            if (theName == null) {
-                theName = theKey;
-            }
-            if (theName.length() > 24)
-                theName = theName.substring(0, 24) + "...";
-            theGameList.addItem(new NamedItem(theKey, theName));
         }
     }
 

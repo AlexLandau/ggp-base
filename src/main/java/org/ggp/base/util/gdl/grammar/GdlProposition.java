@@ -3,9 +3,9 @@ package org.ggp.base.util.gdl.grammar;
 import java.util.Collections;
 import java.util.List;
 
-@SuppressWarnings("serial")
 public final class GdlProposition extends GdlSentence
 {
+    private static final long serialVersionUID = 1L;
 
     private final GdlConstant name;
 
@@ -45,7 +45,7 @@ public final class GdlProposition extends GdlSentence
     }
 
     @Override
-    public GdlTerm toTerm()
+    public GdlConstant toTerm()
     {
         return name;
     }
@@ -53,6 +53,11 @@ public final class GdlProposition extends GdlSentence
     @Override
     public List<GdlTerm> getBody() {
         return Collections.emptyList();
+    }
+
+    @Override
+    public GdlSentence withName(GdlConstant newName) {
+        return GdlPool.getProposition(newName);
     }
 
 }

@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.ggp.base.player.GamePlayer;
+import org.ggp.base.player.GamePlayer.BadPortBehavior;
 import org.ggp.base.player.gamer.Gamer;
 import org.ggp.base.util.reflection.ProjectSearcher;
 
@@ -39,6 +40,6 @@ public final class PlayerRunner
             return;
         }
         Gamer gamer = (Gamer) chosenGamerClass.newInstance();
-        new GamePlayer(port, gamer).start();
+        new GamePlayer(port, gamer, BadPortBehavior.FIND_AN_OPEN_PORT).start();
     }
 }

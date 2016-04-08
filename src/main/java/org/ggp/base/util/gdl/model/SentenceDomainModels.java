@@ -1,6 +1,7 @@
 package org.ggp.base.util.gdl.model;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -91,5 +92,55 @@ public class SentenceDomainModels {
         }
         assert result != null;
         return result;
+    }
+
+    public static Set<Set<GdlConstant>> getSubdomains(SentenceDomainModel model) {
+        // Splits the constants used in tuples in the game's sentences into groups, based on where
+        // they could show up with one another.
+        Set<Set<GdlConstant>> subdomains = Sets.newHashSet();
+        for (SentenceForm form : model.getSentenceForms()) {
+            SentenceFormDomain domain = model.getDomain(form);
+            for (int i = 0; i < form.getTupleSize(); i++) {
+                subdomains.add(Sets.newHashSet(domain.getDomainForSlot(i)));
+            }
+        }
+
+        return mergeOverlappingSubdomains(subdomains);
+    }
+
+    private static Set<Set<GdlConstant>> mergeOverlappingSubdomains(
+            Set<Set<GdlConstant>> subdomains) {
+        Set<Set<GdlConstant>> mergedSubdomains = Sets.newHashSet();
+        while (!subdomains.isEmpty()) {
+            Iterator<Set<GdlConstant>> domainItr = subdomains.iterator();
+            Set<GdlConstant> curDomain = Sets.newHashSet(domainItr.next());
+            domainItr.remove();
+            boolean somethingChanged = true;
+            while (somethingChanged) {
+                somethingChanged = false;
+
+                //Merge in any remaining domains that overlap with the current domain
+                domainItr = subdomains.iterator();
+                while (domainItr.hasNext()) {
+                    Set<GdlConstant> domainToCheck = domainItr.next();
+                    if (overlap(domainToCheck, curDomain)) {
+                        curDomain.addAll(domainToCheck);
+                        domainItr.remove();
+                        somethingChanged = true;
+                    }
+                }
+            }
+            mergedSubdomains.add(curDomain);
+        }
+        return mergedSubdomains;
+    }
+
+    private static <T> boolean overlap(Set<T> set1,
+            Set<T> set2) {
+        if (set1.size() < set2.size()) {
+            return !Sets.intersection(set1, set2).isEmpty();
+        } else {
+            return !Sets.intersection(set2, set1).isEmpty();
+        }
     }
 }

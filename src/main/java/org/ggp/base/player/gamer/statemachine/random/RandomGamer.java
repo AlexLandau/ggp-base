@@ -36,6 +36,12 @@ public final class RandomGamer extends StateMachineGamer
         List<Move> moves = getStateMachine().getLegalMoves(getCurrentState(), getRole());
         Move selection = (moves.get(new Random().nextInt(moves.size())));
 
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
         long stop = System.currentTimeMillis();
 
         notifyObservers(new GamerSelectedMoveEvent(moves, selection, stop - start));

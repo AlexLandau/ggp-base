@@ -22,7 +22,6 @@ import org.ggp.base.util.gdl.model.SentenceFormModelFactory;
 
 
 public class Relationizer {
-
     private Relationizer() {
     }
 

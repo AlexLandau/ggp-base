@@ -28,4 +28,9 @@ public final class GamerSelectedMoveEvent extends Event
     public long getTime() {
         return time;
     }
+
+    @Override
+    public String toString() {
+        return "Gamer selected move event: moves: " + moves + "; selection: " + selection + "; time: " + time;
+    }
 }

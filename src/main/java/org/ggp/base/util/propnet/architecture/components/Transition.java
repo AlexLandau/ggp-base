@@ -27,4 +27,13 @@ public final class Transition extends Component
     {
         return toDot("box", "grey", "TRANSITION");
     }
+
+    @Override
+    public String getShortName() {
+        if (getOutputs().isEmpty()) {
+            return "empty transition";
+        } else {
+            return "next(" + getSingleOutput().getShortName() + ")";
+        }
+    }
 }

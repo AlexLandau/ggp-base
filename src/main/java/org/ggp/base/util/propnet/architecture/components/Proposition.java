@@ -77,4 +77,9 @@ public final class Proposition extends Component
     {
         return toDot("circle", value ? "red" : "white", name.toString());
     }
+
+    @Override
+    public String getShortName() {
+        return name.toString();
+    }
 }

@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.ggp.base.util.concurrency.ConcurrencyUtils;
+
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.HashMultimap;
@@ -99,7 +101,7 @@ public class DependencyGraphs {
      */
     public static <T> List<Set<T>> toposortSafe(
             Set<T> allElements,
-            Multimap<T, T> dependencyGraph) {
+            Multimap<T, T> dependencyGraph) throws InterruptedException {
         Set<Set<T>> strataToAdd = createAllStrata(allElements);
         SetMultimap<Set<T>, Set<T>> strataDependencyGraph = createStrataDependencyGraph(dependencyGraph);
         List<Set<T>> ordering = Lists.newArrayList();
@@ -116,7 +118,7 @@ public class DependencyGraphs {
     private static <T> void addOrMergeStratumAndAncestors(Set<T> curStratum,
             List<Set<T>> ordering, Set<Set<T>> toAdd,
             SetMultimap<Set<T>, Set<T>> strataDependencyGraph,
-            List<Set<T>> downstreamStrata) {
+            List<Set<T>> downstreamStrata) throws InterruptedException {
         if (downstreamStrata.contains(curStratum)) {
             int mergeStartIndex = downstreamStrata.indexOf(curStratum);
             List<Set<T>> toMerge = downstreamStrata.subList(mergeStartIndex, downstreamStrata.size());
@@ -125,6 +127,7 @@ public class DependencyGraphs {
         }
         downstreamStrata.add(curStratum);
         for (Set<T> parent : ImmutableList.copyOf(strataDependencyGraph.get(curStratum))) {
+            ConcurrencyUtils.checkForInterruption();
             //We could merge away the parent here, so we protect against CMEs and
             //make sure the parent is still in toAdd before recursing.
             if (toAdd.contains(parent)) {
@@ -143,6 +146,7 @@ public class DependencyGraphs {
             return;
         }
         for (Set<T> parent : strataDependencyGraph.get(curStratum)) {
+            ConcurrencyUtils.checkForInterruption();
             if (toAdd.contains(parent)) {
                 return;
             }
@@ -154,20 +158,23 @@ public class DependencyGraphs {
     //Replace the old strata with the new stratum in toAdd and strataDependencyGraph.
     private static <T> void mergeStrata(Set<Set<T>> toMerge,
             Set<Set<T>> toAdd,
-            SetMultimap<Set<T>, Set<T>> strataDependencyGraph) {
+            SetMultimap<Set<T>, Set<T>> strataDependencyGraph) throws InterruptedException {
         Set<T> newStratum = ImmutableSet.copyOf(Iterables.concat(toMerge));
         for (Set<T> oldStratum : toMerge) {
+            ConcurrencyUtils.checkForInterruption();
             toAdd.remove(oldStratum);
         }
         toAdd.add(newStratum);
         //Change the keys
         for (Set<T> oldStratum : toMerge) {
+            ConcurrencyUtils.checkForInterruption();
             Collection<Set<T>> parents = strataDependencyGraph.get(oldStratum);
             strataDependencyGraph.putAll(newStratum, parents);
             strataDependencyGraph.removeAll(oldStratum);
         }
         //Change the values
         for (Entry<Set<T>, Set<T>> entry : ImmutableList.copyOf(strataDependencyGraph.entries())) {
+            ConcurrencyUtils.checkForInterruption();
             if (toMerge.contains(entry.getValue())) {
                 strataDependencyGraph.remove(entry.getKey(), entry.getValue());
                 strataDependencyGraph.put(entry.getKey(), newStratum);
@@ -184,9 +191,10 @@ public class DependencyGraphs {
     }
 
     private static <T> SetMultimap<Set<T>, Set<T>> createStrataDependencyGraph(
-            Multimap<T, T> dependencyGraph) {
+            Multimap<T, T> dependencyGraph) throws InterruptedException {
         SetMultimap<Set<T>, Set<T>> strataDependencyGraph = HashMultimap.create();
         for (Entry<T, T> entry : dependencyGraph.entries()) {
+            ConcurrencyUtils.checkForInterruption();
             strataDependencyGraph.put(ImmutableSet.of(entry.getKey()), ImmutableSet.of(entry.getValue()));
         }
         return strataDependencyGraph;

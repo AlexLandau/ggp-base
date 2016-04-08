@@ -1,5 +1,6 @@
 package org.ggp.base.util.gdl.model;
 
+import java.util.Comparator;
 import java.util.List;
 
 import org.ggp.base.util.gdl.GdlUtils;
@@ -51,4 +52,27 @@ public interface SentenceForm {
      * {@link GdlUtils#getTupleFromGroundSentence(GdlSentence)}.
      */
     GdlSentence getSentenceFromTuple(List<? extends GdlTerm> tuple);
+
+    /**
+     * See {@link AbstractSentenceForm#equals(Object)}
+     */
+    @Override
+    boolean equals(Object other);
+
+    /**
+     * See {@link AbstractSentenceForm#hashCode()}
+     */
+    @Override
+    public int hashCode();
+
+    /**
+     * See {@link AbstractSentenceForm#toString()}
+     */
+    @Override
+    public String toString();
+
+    static Comparator<SentenceForm> ALPHA_COMPARATOR = Comparator.comparing(SentenceForm::toString);
+
+    GdlSentence getSampleSentence();
+
 }

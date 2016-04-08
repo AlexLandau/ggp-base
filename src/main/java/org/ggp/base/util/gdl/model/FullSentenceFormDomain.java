@@ -3,16 +3,21 @@ package org.ggp.base.util.gdl.model;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.ggp.base.util.gdl.GdlUtils;
 import org.ggp.base.util.gdl.grammar.GdlConstant;
 import org.ggp.base.util.gdl.grammar.GdlSentence;
 
+import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.SetMultimap;
 
 /**
  * A {@link SentenceFormDomain} implementation that stores every possible
@@ -70,5 +75,32 @@ public class FullSentenceFormDomain implements SentenceFormDomain {
     public Set<GdlConstant> getDomainForSlot(int slotIndex) {
         Preconditions.checkElementIndex(slotIndex, form.getTupleSize());
         return domainsForSlots.get(slotIndex);
+    }
+
+    private static final Function<Collection<GdlConstant>, Set<GdlConstant>> CAST_FUNCTION =
+            new Function<Collection<GdlConstant>, Set<GdlConstant>>() {
+        @Override
+        public Set<GdlConstant> apply(Collection<GdlConstant> input) {
+            return (Set<GdlConstant>) input;
+        }
+    };
+
+    //TODO: Memoize?
+    @Override
+    public Map<GdlConstant, Set<GdlConstant>> getDomainsForSlotGivenValuesOfOtherSlot(
+            int slotOfInterest, int inputSlot) {
+        SetMultimap<GdlConstant, GdlConstant> result = HashMultimap.create();
+        for (GdlSentence sentence : domain) {
+            List<GdlConstant> tuple = GdlUtils.getTupleFromGroundSentence(sentence);
+            GdlConstant inputValue = tuple.get(inputSlot);
+            GdlConstant targetValue = tuple.get(slotOfInterest);
+            result.put(inputValue, targetValue);
+        }
+        return Maps.transformValues(result.asMap(), CAST_FUNCTION);
+    }
+
+    @Override
+    public int getDomainSize() {
+        return domain.size();
     }
 }

@@ -12,6 +12,17 @@ public class FileUtils {
     private FileUtils() {
     }
 
+    /**
+     * @param filePath the name of the file to open.
+     */
+    public static String readFileAsString(String filePath)
+    {
+        return readFileAsString(new File(filePath));
+    }
+
+    /**
+     * @param filePath the file to open.
+     */
     public static String readFileAsString(File file) {
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             StringBuilder fileData = new StringBuilder(10000);

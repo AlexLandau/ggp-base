@@ -28,6 +28,7 @@ import javax.swing.ListSelectionModel;
 import javax.swing.border.TitledBorder;
 
 import org.ggp.base.player.GamePlayer;
+import org.ggp.base.player.GamePlayer.BadPortBehavior;
 import org.ggp.base.player.gamer.Gamer;
 import org.ggp.base.player.gamer.exception.AbortingException;
 import org.ggp.base.server.GameServer;
@@ -190,7 +191,7 @@ public final class Kiosk extends JPanel implements ActionListener, ItemListener,
         // Start up the gamers!
         try {
             theHumanGamer = new KioskGamer(theGUIPanel);
-            theHumanPlayer = new GamePlayer(DEFAULT_HUMAN_PORT, theHumanGamer);
+            theHumanPlayer = new GamePlayer(DEFAULT_HUMAN_PORT, theHumanGamer, BadPortBehavior.FIND_AN_OPEN_PORT);
             theHumanPlayer.start();
         } catch(Exception e) {
             e.printStackTrace();
@@ -331,7 +332,7 @@ public final class Kiosk extends JPanel implements ActionListener, ItemListener,
                         try {
                             gamer = (Gamer) gamerClass.newInstance();
                         } catch(Exception ex) { throw new RuntimeException(ex); }
-                        theComputerPlayer = new GamePlayer(DEFAULT_COMPUTER_PORT, gamer);
+                        theComputerPlayer = new GamePlayer(DEFAULT_COMPUTER_PORT, gamer, BadPortBehavior.FIND_AN_OPEN_PORT);
                         theComputerPlayer.start();
                         System.out.println("Kiosk has started a gamer named " + theComputerPlayer.getGamer().getName() + ".");
                     }

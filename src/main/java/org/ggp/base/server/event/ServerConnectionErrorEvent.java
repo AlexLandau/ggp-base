@@ -22,4 +22,8 @@ public final class ServerConnectionErrorEvent extends Event implements Serializa
         return role;
     }
 
+    @Override
+    public String toString() {
+        return "Server connection error event: " + role;
+    }
 }

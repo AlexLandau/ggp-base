@@ -1,10 +1,10 @@
 package org.ggp.base.util.gdl.model;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -16,6 +16,7 @@ import org.ggp.base.util.gdl.grammar.GdlConstant;
 import org.ggp.base.util.gdl.grammar.GdlLiteral;
 import org.ggp.base.util.gdl.grammar.GdlNot;
 import org.ggp.base.util.gdl.grammar.GdlPool;
+import org.ggp.base.util.gdl.grammar.GdlProposition;
 import org.ggp.base.util.gdl.grammar.GdlRule;
 import org.ggp.base.util.gdl.grammar.GdlSentence;
 import org.ggp.base.util.gdl.grammar.GdlVariable;
@@ -208,12 +209,13 @@ public class GameFlow {
         return sentencesTrueByTurn.size();
     }
 
+    //TODO: Pull into just one method for toposorting sentence forms
     private static List<SentenceForm> getTopologicalOrdering(
             Set<SentenceForm> forms,
             Multimap<SentenceForm, SentenceForm> dependencyGraph) {
         //We want each form as a key of the dependency graph to
         //follow all the forms in the dependency graph, except maybe itself
-        Queue<SentenceForm> queue = new LinkedList<SentenceForm>(forms);
+        Queue<SentenceForm> queue = new ArrayDeque<SentenceForm>(forms);
         List<SentenceForm> ordering = new ArrayList<SentenceForm>(forms.size());
         Set<SentenceForm> alreadyOrdered = new HashSet<SentenceForm>();
         while(!queue.isEmpty()) {
@@ -324,6 +326,13 @@ public class GameFlow {
 
     public int getTurnAfterLast() {
         return turnAfterLast;
+    }
+
+    public boolean isTerminalOnLastTurn() {
+        GdlProposition terminalProp = GdlPool.getProposition(GdlPool.getConstant("terminal"));
+
+        int lastTurn = sentencesTrueByTurn.size() - 1;
+        return sentencesTrueByTurn.get(lastTurn).contains(terminalProp);
     }
 
 }

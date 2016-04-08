@@ -23,7 +23,6 @@ import org.ggp.base.util.gdl.grammar.GdlRule;
 import org.ggp.base.util.gdl.grammar.GdlSentence;
 import org.ggp.base.util.gdl.grammar.GdlTerm;
 import org.ggp.base.util.gdl.grammar.GdlVariable;
-import org.ggp.base.util.logging.GamerLogger;
 
 
 /**
@@ -616,7 +615,7 @@ public class PropNetFlattener {
         Set<Domain> lastUpdatedDomains = new HashSet<Domain>(domains.values());
         while(changedSomething)
         {
-            GamerLogger.log("StateMachine", "Beginning domain finding iteration: "+itrNum);
+//            GamerLogger.log("StateMachine", "Beginning domain finding iteration: "+itrNum);
             Set<Domain> currUpdatedDomains = new HashSet<Domain>();
             changedSomething = false;
             int rulesConsidered = 0;
@@ -687,7 +686,7 @@ public class PropNetFlattener {
             }
             itrNum++;
             lastUpdatedDomains = currUpdatedDomains;
-            GamerLogger.log("StateMachine", "\tDone with iteration.  Considered "+rulesConsidered+" rules.");
+//            GamerLogger.log("StateMachine", "\tDone with iteration.  Considered "+rulesConsidered+" rules.");
         }
     }
 

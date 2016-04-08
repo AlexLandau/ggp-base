@@ -1,5 +1,7 @@
 package org.ggp.base.util.gdl.model;
 
+import javax.annotation.concurrent.Immutable;
+
 import org.ggp.base.util.gdl.grammar.Gdl;
 import org.ggp.base.util.gdl.grammar.GdlRule;
 import org.ggp.base.util.gdl.grammar.GdlSentence;
@@ -10,6 +12,7 @@ import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 
+@Immutable
 public class ImmutableSentenceFormModel implements SentenceFormModel {
     private final ImmutableList<Gdl> gameDescription;
     private final ImmutableSet<SentenceForm> sentenceForms;

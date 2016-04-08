@@ -84,6 +84,7 @@ public final class OutcomePanel extends JPanel implements Observer
 
         model.addRow(new String[] { event.getName(), wrapLine(event.getException().toString(), 100) });
         progressBar.setValue(numRows);
+        System.err.println(event.getException().getMessage());
     }
 
     private void observeValidationSuccessEvent(ValidatorSuccessEvent event)

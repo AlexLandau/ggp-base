@@ -3,12 +3,18 @@ package org.ggp.base.util.gdl;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import javax.annotation.Nullable;
+
+import org.ggp.base.util.gdl.factory.GdlFactory;
+import org.ggp.base.util.gdl.factory.exceptions.GdlFormatException;
 import org.ggp.base.util.gdl.grammar.Gdl;
 import org.ggp.base.util.gdl.grammar.GdlConstant;
 import org.ggp.base.util.gdl.grammar.GdlDistinct;
@@ -21,7 +27,9 @@ import org.ggp.base.util.gdl.grammar.GdlRule;
 import org.ggp.base.util.gdl.grammar.GdlSentence;
 import org.ggp.base.util.gdl.grammar.GdlTerm;
 import org.ggp.base.util.gdl.grammar.GdlVariable;
+import org.ggp.base.util.symbol.factory.exceptions.SymbolFormatException;
 
+import com.google.common.collect.Sets;
 
 public class GdlUtils {
     private GdlUtils() {
@@ -46,6 +54,17 @@ public class GdlUtils {
     public static Set<GdlVariable> getVariablesSet(Gdl gdl) {
         final Set<GdlVariable> variables = new HashSet<GdlVariable>();
         GdlVisitors.visitAll(gdl, new GdlVisitor() {
+            @Override
+            public void visitVariable(GdlVariable variable) {
+                variables.add(variable);
+            }
+        });
+        return variables;
+    }
+
+    public static Set<GdlVariable> getVariables(Collection<? extends Gdl> gdls) {
+        final Set<GdlVariable> variables = Sets.newHashSet();
+        GdlVisitors.visitAll(gdls, new GdlVisitor() {
             @Override
             public void visitVariable(GdlVariable variable) {
                 variables.add(variable);
@@ -87,6 +106,8 @@ public class GdlUtils {
         }
     }
 
+    //TODO: Write version to find Nth constant/variable in sentence, to avoid unnecessary
+    //memory allocations?
     public static List<GdlTerm> getTupleFromSentence(
             GdlSentence sentence) {
         if(sentence instanceof GdlProposition)
@@ -145,7 +166,10 @@ public class GdlUtils {
         }
     }
 
-    public static Map<GdlVariable, GdlConstant> getAssignmentMakingLeftIntoRight(
+    /**
+     * Returns null if no assignment is possible.
+     */
+    public static @Nullable Map<GdlVariable, GdlConstant> getAssignmentMakingLeftIntoRight(
             GdlSentence left, GdlSentence right) {
         Map<GdlVariable, GdlConstant> assignment = new HashMap<GdlVariable, GdlConstant>();
         if(!left.getName().equals(right.getName()))
@@ -216,4 +240,37 @@ public class GdlUtils {
         return false;
     }
 
+    public static GdlSentence toSentence(String string) {
+        try {
+            return (GdlSentence) GdlFactory.create(string);
+        } catch (GdlFormatException | SymbolFormatException | ClassCastException e) {
+            throw new RuntimeException("String was not a properly-formatted GDL sentence: " + string, e);
+        }
+    }
+
+    public static Set<Integer> getVarIndices(GdlSentence sentence) {
+        List<GdlTerm> tuple = getTupleFromSentence(sentence);
+        return getVarIndices(tuple);
+    }
+
+    private static Set<Integer> getVarIndices(List<GdlTerm> tuple) {
+        Set<Integer> indices = Sets.newHashSet();
+        for (int i = 0; i < tuple.size(); i++) {
+            if (tuple.get(i) instanceof GdlVariable) {
+                indices.add(i);
+            }
+        }
+        return indices;
+    }
+
+    public static List<GdlSentence> getSentences(List<Gdl> oldRules) {
+        return oldRules.stream()
+                .filter(gdl -> gdl instanceof GdlSentence)
+                .map(gdl -> (GdlSentence) gdl)
+                .collect(Collectors.toList());
+    }
+
+    public static Comparator<Gdl> compareAlphabetically() {
+        return Comparator.comparing(Gdl::toString);
+    }
 }

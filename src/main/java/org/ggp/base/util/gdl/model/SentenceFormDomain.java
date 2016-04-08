@@ -1,5 +1,6 @@
 package org.ggp.base.util.gdl.model;
 
+import java.util.Map;
 import java.util.Set;
 
 import org.ggp.base.util.gdl.grammar.GdlConstant;
@@ -22,4 +23,18 @@ public interface SentenceFormDomain extends Iterable<GdlSentence> {
      * the given slot index in the sentence form.
      */
     Set<GdlConstant> getDomainForSlot(int slotIndex);
+
+    /**
+     * Returns a map from possible values of slot inputSlot to the associated possible values of
+     * slotOfInterest.
+     *
+     * Note: For efficiency's sake, this is not a SetMultimap; see the implementation
+     * in {@link CartesianSentenceFormDomain}.
+     */
+    Map<GdlConstant, Set<GdlConstant>> getDomainsForSlotGivenValuesOfOtherSlot(int slotOfInterest, int inputSlot);
+
+    /**
+     * Returns the number of sentences that will be returned by this domain's iterator.
+     */
+    int getDomainSize();
 }

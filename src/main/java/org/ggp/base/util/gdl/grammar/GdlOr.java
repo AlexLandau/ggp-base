@@ -4,9 +4,9 @@ import java.util.List;
 
 import com.google.common.collect.ImmutableList;
 
-@SuppressWarnings("serial")
 public final class GdlOr extends GdlLiteral
 {
+    private static final long serialVersionUID = 1L;
 
     private final ImmutableList<GdlLiteral> disjuncts;
     private transient Boolean ground;

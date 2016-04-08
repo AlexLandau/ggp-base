@@ -72,7 +72,7 @@ public final class PropNetConverter
         fixDisjunctions();
         addMissingInputs();
 
-        return new PropNet(roles, components);
+        return new PropNet(roles, components, null);
     }
 
     /**

@@ -9,10 +9,29 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import javax.annotation.Nullable;
+
+import org.ggp.base.util.Immutables;
+import org.ggp.base.util.assignments.AssignmentStrategy;
+import org.ggp.base.util.assignments.ComplexAssignmentIterationPlan;
+import org.ggp.base.util.assignments.DependentAssignmentStrategy;
+import org.ggp.base.util.assignments.NewAssignmentIterationPlan;
+import org.ggp.base.util.assignments.SimpleAssignmentStrategy;
 import org.ggp.base.util.gdl.GdlUtils;
+import org.ggp.base.util.gdl.grammar.GdlConstant;
 import org.ggp.base.util.gdl.grammar.GdlSentence;
 import org.ggp.base.util.gdl.grammar.GdlTerm;
 import org.ggp.base.util.gdl.grammar.GdlVariable;
+import org.ggp.base.util.gdl.model.SentenceForm;
+import org.ggp.base.util.gdl.transforms.ConstantChecker;
+
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ListMultimap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
 //This class has a natural ordering that is inconsistent with equals.
 public class IterationOrderCandidate implements Comparable<IterationOrderCandidate> {
@@ -329,16 +348,15 @@ public class IterationOrderCandidate implements Comparable<IterationOrderCandida
                     throw new RuntimeException("We should not run out of functions we could use");
                 //Find the smallest set of dependencies
                 Set<GdlVariable> dependencySetToUse = null;
-                if(functionsHavingDependencies.containsKey(Collections.emptySet())) {
-                    dependencySetToUse = Collections.emptySet();
-                } else {
-                    int smallestSize = Integer.MAX_VALUE;
-                    for(Set<GdlVariable> dependencySet : functionsHavingDependencies.keySet()) {
-                        if(dependencySet.size() < smallestSize) {
-                            smallestSize = dependencySet.size();
-                            dependencySetToUse = dependencySet;
-                        }
+                int smallestDependencySetSize = Integer.MAX_VALUE;
+                for(Set<GdlVariable> dependencySet : functionsHavingDependencies.keySet()) {
+                    if(dependencySet.size() < smallestDependencySetSize) {
+                        smallestDependencySetSize = dependencySet.size();
+                        dependencySetToUse = dependencySet;
                     }
+                }
+                if (dependencySetToUse == null) {
+                    dependencySetToUse = ImmutableSet.of();
                 }
                 //See if any of the functions are applicable
                 Set<Integer> functions = functionsHavingDependencies.get(dependencySetToUse);
@@ -467,6 +485,7 @@ public class IterationOrderCandidate implements Comparable<IterationOrderCandida
         if(tuple.size() != dependentSlots.size())
             throw new RuntimeException("Mismatched sentence " + functionalSentence + " and constant form " + functionInfo);
 
+        //TODO: Should "candidateVars" here just be a call to getProducibleVars?
         Set<GdlVariable> candidateVars = new HashSet<GdlVariable>();
         for(int i = 0; i < tuple.size(); i++) {
             GdlTerm term = tuple.get(i);
@@ -494,16 +513,126 @@ public class IterationOrderCandidate implements Comparable<IterationOrderCandida
     //This class has a natural ordering that is inconsistent with equals.
     @Override
     public int compareTo(IterationOrderCandidate o) {
-        long diff = getHeuristicValue() - o.getHeuristicValue();
-        if(diff < 0)
-            return -1;
-        else if(diff == 0)
-            return 0;
-        else
-            return 1;
+        return Long.compare(getHeuristicValue(), o.getHeuristicValue());
     }
     @Override
     public String toString() {
         return varOrdering.toString() + " with sources " + getSourceConjuncts().toString() + "; functional?: " + functionalConjunctIndices + "; domain sizes are " + this.varDomainSizes;
+    }
+
+    public NewAssignmentIterationPlan toAssignmentIterationPlan(Map<GdlVariable, Set<GdlConstant>> varDomains,
+            ConstantChecker constantChecker) {
+        Preconditions.checkState(isComplete());
+        List<GdlVariable> assignmentOrder = varOrdering;
+        List<AssignmentStrategy> strategies = Lists.newArrayList();
+
+        //What gets shared?
+        //getSourceConjuncts -> defined by sourceConjunctIndices
+        //getFunctionalConjuncts -> defined by functionalConjunctIndices
+        //What will our strategies look like?
+        //One per source conjunct
+        //One per function
+        //One per standard iteration
+        for (GdlSentence sourceConjunct : getSourceConjuncts()) {
+            strategies.add(toStrategyFromSource(sourceConjunct, constantChecker));
+        }
+
+        for (int i = 0; i < varOrdering.size(); i++) {
+            GdlVariable variable = varOrdering.get(i);
+            if (varSources.get(i) == -1) {
+                //Functional or no?
+                int functionalConjunctIndex = functionalConjunctIndices.get(i);
+                if (functionalConjunctIndex >= 0) {
+                    //Create strategy for the functional index
+                    //						strategies.add(DependentAssignmentStrategy.create(
+                    //								dependentIndices,
+                    //								ImmutableList.of(i),
+                    //								contents));
+                    strategies.add(toStrategyFromFunction(i, functionalConjunctIndex, constantChecker));
+                } else {
+                    //Just a naive iteration strategy
+                    strategies.add(SimpleAssignmentStrategy.create(
+                            ImmutableList.of(i),
+                            varDomains.get(variable).stream()
+                            .map(ImmutableList::of)
+                            .collect(Immutables.collectList())));
+                }
+            }
+        }
+
+        //TODO: Add validation that this will give us stuff in the right order...
+        return ComplexAssignmentIterationPlan.create(assignmentOrder, strategies);
+    }
+
+    private AssignmentStrategy toStrategyFromFunction(int varIndex,
+            int functionalConjunctIndex, ConstantChecker constantChecker) {
+        GdlSentence functionalSentence = functionalSentences.get(functionalConjunctIndex);
+        FunctionInfo functionInfo = functionalSentencesInfo.get(functionalConjunctIndex);
+        //			functionInfo.getValueMap(varIndex); //These might need reordering...
+        List<Integer> definedIndices = ImmutableList.of(varIndex);
+        List<Integer> dependentIndices = GdlUtils.getVariables(functionalSentence).stream()
+                .map(varOrdering::indexOf)
+                .filter(i -> !i.equals(varIndex))
+                .sorted()
+                .distinct()
+                .collect(Immutables.collectList());
+
+        Preconditions.checkState(constantChecker.getConstantSentenceForms().contains(functionInfo.getSentenceForm()),
+                "Not implemented yet for non-constant sentence forms");
+        Set<GdlSentence> sentencesForForm = constantChecker.getTrueSentences(functionInfo.getSentenceForm());
+        ListMultimap<List<GdlConstant>, List<GdlConstant>> contents = getContents(
+                functionalSentence, dependentIndices, definedIndices, sentencesForForm);
+        return DependentAssignmentStrategy.create(dependentIndices, definedIndices, contents.asMap());
+    }
+
+    private AssignmentStrategy toStrategyFromSource(
+            GdlSentence sourceConjunct,
+            ConstantChecker constantChecker) {
+        int sourceIndex = sourceConjunctCandidates.indexOf(sourceConjunct);
+        List<Integer> dependentIndices = Lists.newArrayList();
+        List<Integer> definedIndices = Lists.newArrayList();
+        //... so we need to know which variable indices the conjunct is involved with
+        Set<GdlVariable> varsInSource = Sets.newHashSet(GdlUtils.getVariables(sourceConjunct));
+        for (int i = 0; i < varOrdering.size(); i++) {
+            if (varsInSource.contains(varOrdering.get(i))) {
+                if (varSources.get(i) == sourceIndex) {
+                    definedIndices.add(i);
+                } else {
+                    dependentIndices.add(i);
+                }
+            }
+        }
+
+        SentenceForm sourceConjunctForm = constantChecker.getSentenceFormModel().getSentenceForm(sourceConjunct);
+        Preconditions.checkState(constantChecker.getConstantSentenceForms().contains(sourceConjunctForm),
+                "Haven't yet implemented passing of non-constant sources");
+        Set<GdlSentence> sentencesForForm = constantChecker.getTrueSentences(sourceConjunctForm);
+        ListMultimap<List<GdlConstant>, List<GdlConstant>> contents = getContents(
+                sourceConjunct, dependentIndices, definedIndices,
+                sentencesForForm);
+
+        return DependentAssignmentStrategy.create(dependentIndices, definedIndices, contents.asMap());
+    }
+
+    private ListMultimap<List<GdlConstant>, List<GdlConstant>> getContents(
+            GdlSentence sourceConjunct, List<Integer> dependentIndices,
+            List<Integer> definedIndices, Set<GdlSentence> sentencesForForm) {
+        ListMultimap<List<GdlConstant>, List<GdlConstant>> contents = ArrayListMultimap.create();
+        for (GdlSentence sentence : sentencesForForm) {
+            @Nullable Map<GdlVariable, GdlConstant> assignment = GdlUtils.getAssignmentMakingLeftIntoRight(sourceConjunct, sentence);
+            if (assignment == null) {
+                continue;
+            }
+            List<GdlConstant> dependents = dependentIndices.stream()
+                    .map(varOrdering::get)
+                    .map(assignment::get)
+                    .collect(Immutables.collectList());
+            List<GdlConstant> defined = definedIndices.stream()
+                    .map(varOrdering::get)
+                    .map(assignment::get)
+                    .collect(Immutables.collectList());
+            contents.put(dependents, defined);
+        }
+        return contents;
     }
 }

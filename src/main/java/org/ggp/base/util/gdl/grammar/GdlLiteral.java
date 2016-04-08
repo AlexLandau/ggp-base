@@ -1,6 +1,6 @@
 package org.ggp.base.util.gdl.grammar;
 
-@SuppressWarnings("serial")
+@SuppressWarnings("serial") //abstract
 public abstract class GdlLiteral extends Gdl
 {
 

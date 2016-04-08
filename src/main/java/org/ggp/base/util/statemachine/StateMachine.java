@@ -1,22 +1,29 @@
 package org.ggp.base.util.statemachine;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
+import org.ggp.base.util.GoalTuplePool;
+import org.ggp.base.util.GoalTuplePool.GoalTuplePoolNode;
 import org.ggp.base.util.gdl.grammar.Gdl;
 import org.ggp.base.util.gdl.grammar.GdlConstant;
 import org.ggp.base.util.gdl.grammar.GdlSentence;
 import org.ggp.base.util.gdl.grammar.GdlTerm;
+import org.ggp.base.util.propnet.architecture.Component;
+import org.ggp.base.util.propnet.architecture.PropNet;
 import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 
 
 /**
@@ -101,6 +108,17 @@ public abstract class StateMachine
         return new Move(term);
     }
 
+    /*
+     * Should return a copy of the state machine that can be used in a synchronized
+     * fashion in conjunction with this state machine. Assume that initialize() has
+     * already been called on this machine, and return a machine as if initialize()
+     * has already been called on it.
+     *
+     * If the state machine doesn't depend on internal storage (e.g.
+     * ProverStateMachine), it may return itself.
+     */
+    public abstract StateMachine getSynchronizedCopy();
+
     // ============================================
     //          Stubs for advanced methods
     // ============================================
@@ -165,7 +183,7 @@ public abstract class StateMachine
         }
 
         List<List<Move>> crossProduct = new ArrayList<List<Move>>();
-        crossProductLegalMoves(legals, crossProduct, new LinkedList<Move>());
+        crossProductLegalMoves(legals, crossProduct, new ArrayDeque<Move>());
 
         return crossProduct;
     }
@@ -189,9 +207,17 @@ public abstract class StateMachine
         }
 
         List<List<Move>> crossProduct = new ArrayList<List<Move>>();
-        crossProductLegalMoves(legals, crossProduct, new LinkedList<Move>());
+        crossProductLegalMoves(legals, crossProduct, new ArrayDeque<Move>());
 
         return crossProduct;
+    }
+
+    public List<List<Move>> getLegalMovesByRole(MachineState state) throws MoveDefinitionException {
+        List<List<Move>> legalMovesByRole = Lists.newArrayListWithCapacity(getRoles().size());
+        for (Role role : getRoles()) {
+            legalMovesByRole.add(getLegalMoves(state, role));
+        }
+        return legalMovesByRole;
     }
 
     /**
@@ -233,7 +259,7 @@ public abstract class StateMachine
         return nextStates;
     }
 
-    protected void crossProductLegalMoves(List<List<Move>> legals, List<List<Move>> crossProduct, LinkedList<Move> partial)
+    protected void crossProductLegalMoves(List<List<Move>> legals, List<List<Move>> crossProduct, Deque<Move> partial)
     {
         if (partial.size() == legals.size()) {
             crossProduct.add(new ArrayList<Move>(partial));
@@ -277,12 +303,12 @@ public abstract class StateMachine
      * is called on a terminal state, this indicates an error in either the game
      * description or the StateMachine implementation.
      */
-    public List<Integer> getGoals(MachineState state) throws GoalDefinitionException {
-        List<Integer> theGoals = new ArrayList<Integer>();
+    public ImmutableList<Integer> getGoals(MachineState state) throws GoalDefinitionException {
+        GoalTuplePoolNode curNode = GoalTuplePool.getInitialNode();
         for (Role r : getRoles()) {
-            theGoals.add(getGoal(state, r));
+            curNode = curNode.get(getGoal(state, r));
         }
-        return theGoals;
+        return curNode.getList();
     }
 
     /**
@@ -291,7 +317,7 @@ public abstract class StateMachine
      */
     public List<Move> getRandomJointMove(MachineState state) throws MoveDefinitionException
     {
-        List<Move> random = new ArrayList<Move>();
+        List<Move> random = new ArrayList<Move>(getRoles().size());
         for (Role role : getRoles()) {
             random.add(getRandomMove(state, role));
         }
@@ -305,7 +331,7 @@ public abstract class StateMachine
      */
     public List<Move> getRandomJointMove(MachineState state, Role role, Move move) throws MoveDefinitionException
     {
-        List<Move> random = new ArrayList<Move>();
+        List<Move> random = new ArrayList<Move>(getRoles().size());
         for (Role r : getRoles()) {
             if (r.equals(role)) {
                 random.add(move);
@@ -315,6 +341,25 @@ public abstract class StateMachine
         }
 
         return random;
+    }
+
+    public List<Move> getRandomJointMoveWithAnyGebMoves(MachineState state) throws MoveDefinitionException {
+        Map<Role, Move> gebMoves = getGebMoves(state);
+        return getRandomJointMoveWithMoves(state, gebMoves);
+    }
+
+    public List<Move> getRandomJointMoveWithMoves(MachineState state,
+            Map<Role, Move> specifiedMoves) throws MoveDefinitionException {
+        List<Move> moves = new ArrayList<Move>(getRoles().size());
+        for (Role r : getRoles()) {
+            Move suggestedMove = specifiedMoves.get(r);
+            if (suggestedMove != null) {
+                moves.add(suggestedMove);
+            } else {
+                moves.add(getRandomMove(state, r));
+            }
+        }
+        return moves;
     }
 
     /**
@@ -359,13 +404,13 @@ public abstract class StateMachine
     }
 
     /**
-     * Returns a terminal state derived from repeatedly making random joint moves
+     * Returns goals from a terminal state derived from repeatedly making random joint moves
      * until reaching the end of the game.
      *
      * @param theDepth an integer array, the 0th element of which will be set to
      * the number of state changes that were made to reach a terminal state.
      */
-    public MachineState performDepthCharge(MachineState state, final int[] theDepth) throws TransitionDefinitionException, MoveDefinitionException {
+    public ImmutableList<Integer> performDepthCharge(MachineState state, final int[] theDepth) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
         int nDepth = 0;
         while(!isTerminal(state)) {
             nDepth++;
@@ -373,8 +418,21 @@ public abstract class StateMachine
         }
         if(theDepth != null)
             theDepth[0] = nDepth;
-        return state;
+        return getGoals(state);
     }
+
+//    public DepthChargeBatchResult performDepthChargeBatch2(MachineState state) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
+//        int[] theDepth = new int[1];
+//        ImmutableList<Integer> goals = performDepthCharge(state, theDepth);
+//        return new FlatDepthChargeResult(goals, 1);
+//    }
+
+    public abstract Map<Role, Move> getGebMoves(MachineState state);
+
+    public abstract MachineState translateState(MachineState state);
+
+    //TODO: Rename this "isNative"; seems to make more sense
+    public abstract boolean isNative(MachineState state);
 
     public void getAverageDiscountedScoresFromRepeatedDepthCharges(final MachineState state, final double[] avgScores, final double[] avgDepth, final double discountFactor, final int repetitions) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
         avgDepth[0] = 0;
@@ -383,12 +441,12 @@ public abstract class StateMachine
         }
         final int[] depth = new int[1];
         for (int i = 0; i < repetitions; i++) {
-            MachineState stateForCharge = state.clone();
-            stateForCharge = performDepthCharge(stateForCharge, depth);
+            MachineState stateForCharge = state.getCopy();
+            List<Integer> goalValues = performDepthCharge(stateForCharge, depth);
             avgDepth[0] += depth[0];
             final double accumulatedDiscountFactor = Math.pow(discountFactor, depth[0]);
             for (int j = 0; j < avgScores.length; j++) {
-                avgScores[j] += getGoal(stateForCharge, getRoles().get(j)) * accumulatedDiscountFactor;
+                avgScores[j] += goalValues.get(j) * accumulatedDiscountFactor;
             }
         }
         avgDepth[0] /= repetitions;
@@ -396,4 +454,13 @@ public abstract class StateMachine
             avgScores[j] /= repetitions;
         }
     }
+
+    public abstract boolean isPropNetBased();
+
+    public abstract PropNet getPropNet();
+
+    public abstract boolean getComponentValue(MachineState state, Component component);
+
+    public abstract int getComponentTrueInputsCount(MachineState state, Component component);
+
 }

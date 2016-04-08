@@ -1,9 +1,10 @@
 package org.ggp.base.util.propnet.factory.flattener;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -123,7 +124,7 @@ public final class PropNetAnnotatedFlattener
      * @param results
      *            The list of results built up so far.
      */
-    private void expandTrue(GdlSentence base, int index, LinkedList<GdlTerm> workingSet, List<GdlRule> results)
+    private void expandTrue(GdlSentence base, int index, Deque<GdlTerm> workingSet, List<GdlRule> results)
     {
         if ( base.arity() == index )
         {
@@ -211,7 +212,7 @@ public final class PropNetAnnotatedFlattener
                     else
                     {
                         List<GdlRule> results = new ArrayList<GdlRule>();
-                        expandTrue(sentence, 1, new LinkedList<GdlTerm>(), results);
+                        expandTrue(sentence, 1, new ArrayDeque<GdlTerm>(), results);
 
                         trues.addAll(results);
                     }

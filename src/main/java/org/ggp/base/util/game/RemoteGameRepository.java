@@ -76,11 +76,12 @@ public final class RemoteGameRepository extends GameRepository {
         } catch(JSONException e) {}
 
         String theDescription = getGameResourceFromMetadata(theGameURL, theMetadata, "description");
-        String theStylesheet = getGameResourceFromMetadata(theGameURL, theMetadata, "stylesheet");
+        String theXsltStylesheet = getGameResourceFromMetadata(theGameURL, theMetadata, "stylesheet");
+        String theJsStylesheet = getGameResourceFromMetadata(theGameURL, theMetadata, "jsStylesheet");
         String theRulesheet = Game.preprocessRulesheet(getGameResourceFromMetadata(theGameURL, theMetadata, "rulesheet"));
 
         if (theRulesheet == null || theRulesheet.isEmpty()) return null;
-        return new Game(theKey, theName, theDescription, theGameURL, theStylesheet, theRulesheet);
+        return new Game(theKey, theName, theDescription, theGameURL, theXsltStylesheet, theJsStylesheet, theRulesheet);
     }
 
     JSONObject getBundledMetadata() {

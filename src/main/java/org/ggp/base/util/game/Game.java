@@ -3,6 +3,8 @@ package org.ggp.base.util.game;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.annotation.Nullable;
+
 import org.ggp.base.util.gdl.factory.GdlFactory;
 import org.ggp.base.util.gdl.factory.exceptions.GdlFormatException;
 import org.ggp.base.util.gdl.grammar.Gdl;
@@ -58,19 +60,25 @@ public final class Game {
     private final String theName;
     private final String theDescription;
     private final String theRepositoryURL;
-    private final String theStylesheet;
+    private final String theXsltStylesheet;
+    private final String theJsStylesheet;
     private final String theRulesheet;
 
     public static Game createEphemeralGame(String theRulesheet) {
-        return new Game(null, null, null, null, null, theRulesheet);
+        return new Game(null, null, null, null, null, null, theRulesheet);
     }
 
-    protected Game (String theKey, String theName, String theDescription, String theRepositoryURL, String theStylesheet, String theRulesheet) {
+    public static Game createEphemeralGame(String theXsltStylesheet, String theJsStylesheet, String theRulesheet) {
+        return new Game(null, null, null, null, theXsltStylesheet, theJsStylesheet, theRulesheet);
+    }
+
+    protected Game (String theKey, String theName, String theDescription, String theRepositoryURL, String theXsltStylesheet, String theJsStylesheet, String theRulesheet) {
         this.theKey = theKey;
         this.theName = theName;
         this.theDescription = theDescription;
         this.theRepositoryURL = theRepositoryURL;
-        this.theStylesheet = theStylesheet;
+        this.theXsltStylesheet = theXsltStylesheet;
+        this.theJsStylesheet = theJsStylesheet;
         this.theRulesheet = theRulesheet;
     }
 
@@ -90,8 +98,12 @@ public final class Game {
         return theDescription;
     }
 
-    public String getStylesheet() {
-        return theStylesheet;
+    public String getXsltStylesheet() {
+        return theXsltStylesheet;
+    }
+
+    public String getJsStylesheet() {
+        return theJsStylesheet;
     }
 
     public String getRulesheet() {
@@ -139,7 +151,7 @@ public final class Game {
      *
      * @return
      */
-    public List<Gdl> getRules() {
+    public @Nullable List<Gdl> getRules() {
         try {
             List<Gdl> rules = new ArrayList<Gdl>();
             SymbolList list = (SymbolList) SymbolFactory.create(theRulesheet);
@@ -157,6 +169,7 @@ public final class Game {
         }
     }
 
+    //TODO: Update JSON format properly for new stylesheet type
     public String serializeToJSON() {
         try {
             JSONObject theGameObject = new JSONObject();
@@ -164,7 +177,8 @@ public final class Game {
             theGameObject.put("theName", getName());
             theGameObject.put("theDescription", getDescription());
             theGameObject.put("theRepositoryURL", getRepositoryURL());
-            theGameObject.put("theStylesheet", getStylesheet());
+            theGameObject.put("theStylesheet", getXsltStylesheet());
+            theGameObject.put("theJsStylesheet", getJsStylesheet());
             theGameObject.put("theRulesheet", getRulesheet());
 
             return theGameObject.toString();
@@ -198,9 +212,14 @@ public final class Game {
                 theRepositoryURL = theGameObject.getString("theRepositoryURL");
             } catch (Exception e) {}
 
-            String theStylesheet = null;
+            String theXsltStylesheet = null;
             try {
-                theStylesheet = theGameObject.getString("theStylesheet");
+                theXsltStylesheet = theGameObject.getString("theStylesheet");
+            } catch (Exception e) {}
+
+            String theJsStylesheet = null;
+            try {
+                theJsStylesheet = theGameObject.getString("theJsStylesheet");
             } catch (Exception e) {}
 
             String theRulesheet = null;
@@ -208,7 +227,7 @@ public final class Game {
                 theRulesheet = theGameObject.getString("theRulesheet");
             } catch (Exception e) {}
 
-            return new Game(theKey, theName, theDescription, theRepositoryURL, theStylesheet, theRulesheet);
+            return new Game(theKey, theName, theDescription, theRepositoryURL, theXsltStylesheet, theJsStylesheet, theRulesheet);
         } catch(Exception e) {
             e.printStackTrace();
             return null;

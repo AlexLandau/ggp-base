@@ -1,6 +1,7 @@
 package org.ggp.base.util.statemachine.implementation.propnet;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -208,5 +209,52 @@ public class SamplePropNetStateMachine extends StateMachine {
 
         }
         return new MachineState(contents);
+    }
+
+    private List<Gdl> description;
+    @Override
+    public StateMachine getSynchronizedCopy() {
+        //TODO: Replace with optimized copy of propnet
+        StateMachine copy = new SamplePropNetStateMachine();
+        copy.initialize(description);
+        return copy;
+    }
+
+    @Override
+    public Map<Role, Move> getGebMoves(MachineState state) {
+        return Collections.emptyMap();
+    }
+
+    @Override
+    public MachineState translateState(MachineState state) {
+        // TODO Implement
+        return null;
+    }
+
+    @Override
+    public boolean isNative(MachineState state) {
+        // TODO Implement
+        return false;
+    }
+
+    @Override
+    public boolean isPropNetBased() {
+        return true;
+    }
+
+    @Override
+    public PropNet getPropNet() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean getComponentValue(MachineState state, Component component) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int getComponentTrueInputsCount(MachineState state,
+            Component component) {
+        throw new UnsupportedOperationException();
     }
 }

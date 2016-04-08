@@ -1,17 +1,25 @@
 package org.ggp.base.util.propnet.factory;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.Set;
 import java.util.Stack;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 
 import org.ggp.base.util.Pair;
 import org.ggp.base.util.concurrency.ConcurrencyUtils;
@@ -19,6 +27,7 @@ import org.ggp.base.util.gdl.GdlUtils;
 import org.ggp.base.util.gdl.grammar.Gdl;
 import org.ggp.base.util.gdl.grammar.GdlConstant;
 import org.ggp.base.util.gdl.grammar.GdlDistinct;
+import org.ggp.base.util.gdl.grammar.GdlFunction;
 import org.ggp.base.util.gdl.grammar.GdlLiteral;
 import org.ggp.base.util.gdl.grammar.GdlNot;
 import org.ggp.base.util.gdl.grammar.GdlPool;
@@ -26,6 +35,7 @@ import org.ggp.base.util.gdl.grammar.GdlProposition;
 import org.ggp.base.util.gdl.grammar.GdlRelation;
 import org.ggp.base.util.gdl.grammar.GdlRule;
 import org.ggp.base.util.gdl.grammar.GdlSentence;
+import org.ggp.base.util.gdl.grammar.GdlTerm;
 import org.ggp.base.util.gdl.grammar.GdlVariable;
 import org.ggp.base.util.gdl.model.SentenceDomainModel;
 import org.ggp.base.util.gdl.model.SentenceDomainModelFactory;
@@ -46,6 +56,7 @@ import org.ggp.base.util.gdl.transforms.DeORer;
 import org.ggp.base.util.gdl.transforms.GdlCleaner;
 import org.ggp.base.util.gdl.transforms.Relationizer;
 import org.ggp.base.util.gdl.transforms.VariableConstrainer;
+import org.ggp.base.util.propnet.Components;
 import org.ggp.base.util.propnet.architecture.Component;
 import org.ggp.base.util.propnet.architecture.PropNet;
 import org.ggp.base.util.propnet.architecture.components.And;
@@ -56,13 +67,14 @@ import org.ggp.base.util.propnet.architecture.components.Proposition;
 import org.ggp.base.util.propnet.architecture.components.Transition;
 import org.ggp.base.util.statemachine.Role;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.HashMultiset;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multiset;
-
 
 /*
  * A propnet factory meant to optimize the propnet before it's even built,
@@ -90,6 +102,8 @@ import com.google.common.collect.Multiset;
  *
  */
 public class OptimizingPropNetFactory {
+    private static final boolean USE_GATE_INPUT_CACHING = true;
+
     private static final GdlConstant LEGAL = GdlPool.getConstant("legal");
     private static final GdlConstant NEXT = GdlPool.getConstant("next");
     private static final GdlConstant TRUE = GdlPool.getConstant("true");
@@ -103,6 +117,7 @@ public class OptimizingPropNetFactory {
     private static final GdlConstant INPUT = GdlPool.getConstant("input");
     private static final GdlProposition TEMP = GdlPool.getProposition(GdlPool.getConstant("TEMP"));
 
+    //TODO: Include a note about the problems with INIT/inits and how to resolve
     /**
      * Creates a PropNet for the game with the given description.
      *
@@ -167,8 +182,11 @@ public class OptimizingPropNetFactory {
         List<Role> roles = Role.computeRoles(description);
         Map<GdlSentence, Component> components = new HashMap<GdlSentence, Component>();
         Map<GdlSentence, Component> negations = new HashMap<GdlSentence, Component>();
+        Set<Component> allComponents = new HashSet<Component>(); //Currently only used in verbose mode
         Constant trueComponent = new Constant(true);
         Constant falseComponent = new Constant(false);
+        Map<Set<Component>, Or> orCache = Maps.newHashMap();
+        Map<Set<Component>, And> andCache = Maps.newHashMap();
         Map<SentenceForm, FunctionInfo> functionInfoMap = new HashMap<SentenceForm, FunctionInfo>();
         Map<SentenceForm, Collection<GdlSentence>> completedSentenceFormValues = new HashMap<SentenceForm, Collection<GdlSentence>>();
         for(SentenceForm form : topologicalOrdering) {
@@ -209,25 +227,40 @@ public class OptimizingPropNetFactory {
             //Add a temporary sentence form thingy? ...
             Map<GdlSentence, Component> temporaryComponents = new HashMap<GdlSentence, Component>();
             Map<GdlSentence, Component> temporaryNegations = new HashMap<GdlSentence, Component>();
-            addSentenceForm(form, model, components, negations, trueComponent, falseComponent, usingBase, usingInput, Collections.singleton(form), temporaryComponents, temporaryNegations, functionInfoMap, constantChecker, completedSentenceFormValues);
+            addSentenceForm(form, model, components, negations, trueComponent, falseComponent,
+                    usingBase, usingInput, Collections.singleton(form), temporaryComponents, temporaryNegations,
+                    functionInfoMap, constantChecker, completedSentenceFormValues, orCache, andCache);
             //TODO: Pass these over groups of multiple sentence forms
             if(verbose && !temporaryComponents.isEmpty())
                 System.out.println("Processing temporary components...");
             processTemporaryComponents(temporaryComponents, temporaryNegations, components, negations, trueComponent, falseComponent);
             addFormToCompletedValues(form, completedSentenceFormValues, components);
-            //if(verbose)
-            //TODO: Add this, but with the correct total number of components (not just Propositions)
-            //System.out.println("  "+completedSentenceFormValues.get(form).size() + " components added");
+            if(verbose) {
+                //TODO: Add this, but with the correct total number of components (not just Propositions)
+                //System.out.println("  " + (allComponents.size()-numComponents) + " components added");
+                //TODO: We'll want to replace this hack eventually... harder than it sounds!
+                int oldSize = allComponents.size();
+                for(GdlSentence sentence : completedSentenceFormValues.get(form))
+                    allComponents.add(components.get(sentence));
+                completeComponentSet(allComponents);
+                int newSize = allComponents.size();
+                System.out.println("  "+(newSize - oldSize)+" components added");
+                if(newSize - oldSize == 0)
+                    System.err.println("Possible error in GDL: No components added for form " + form);
+            }
         }
         //Connect "next" to "true"
         if(verbose)
             System.out.println("Adding transitions...");
-        addTransitions(components);
+        addTransitions(components, verbose);
         //Set up "init" proposition
         if(verbose)
             System.out.println("Setting up 'init' proposition...");
-        setUpInit(components, trueComponent, falseComponent);
+        setUpInit(components, trueComponent, falseComponent, orCache);
+        Set<Proposition> trueInits = getTrueInits(components, constantChecker, trueComponent);
         //Now we can safely...
+        if(verbose)
+            System.out.println("Removing useless base propositions...");
         removeUselessBasePropositions(components, negations, trueComponent, falseComponent);
         if(verbose)
             System.out.println("Creating component set...");
@@ -239,10 +272,7 @@ public class OptimizingPropNetFactory {
         ConcurrencyUtils.checkForInterruption();
         if(verbose)
             System.out.println("Initializing propnet object...");
-        //Make it look the same as the PropNetFactory results, until we decide
-        //how we want it to look
-        normalizePropositions(componentSet);
-        PropNet propnet = new PropNet(roles, componentSet);
+        PropNet propnet = new PropNet(roles, componentSet, trueInits);
         if(verbose) {
             System.out.println("Done setting up propnet; took " + (System.currentTimeMillis() - startTime) + "ms, has " + componentSet.size() + " components and " + propnet.getNumLinks() + " links");
             System.out.println("Propnet has " +propnet.getNumAnds()+" ands; "+propnet.getNumOrs()+" ors; "+propnet.getNumNots()+" nots");
@@ -251,6 +281,26 @@ public class OptimizingPropNetFactory {
         return propnet;
     }
 
+
+
+    private static Set<Proposition> getTrueInits(
+            Map<GdlSentence, Component> components,
+            ConstantChecker constantChecker,
+            Component trueComponent) {
+        Set<Proposition> initiallyTrue = new HashSet<Proposition>();
+        for (Entry<GdlSentence, Component> entry : components.entrySet()) {
+            if (entry.getValue() == trueComponent
+                    && entry.getKey() instanceof GdlRelation) {
+                GdlRelation relation = (GdlRelation) entry.getKey();
+                if (relation.getName() == INIT) {
+                    GdlTerm trueBase = relation.get(0);
+                    GdlFunction withTrue = GdlPool.getFunction(GdlPool.getConstant("true"), Collections.singletonList(trueBase));
+                    initiallyTrue.add((Proposition) components.get(withTrue.toSentence()));
+                }
+            }
+        }
+        return initiallyTrue;
+    }
 
     private static void removeUselessBasePropositions(
             Map<GdlSentence, Component> components, Map<GdlSentence, Component> negations, Constant trueComponent,
@@ -272,26 +322,39 @@ public class OptimizingPropNetFactory {
         optimizeAwayTrueAndFalse(components, negations, trueComponent, falseComponent);
     }
 
-    /**
-     * Changes the propositions contained in the propnet so that they correspond
-     * to the outputs of the PropNetFactory. This is for consistency and for
-     * backwards compatibility with respect to state machines designed for the
-     * old propnet factory. Feel free to remove this for your player.
-     *
-     * @param componentSet
-     */
-    private static void normalizePropositions(Set<Component> componentSet) {
-        for(Component component : componentSet) {
-            if(component instanceof Proposition) {
-                Proposition p = (Proposition) component;
-                GdlSentence sentence = p.getName();
-                if(sentence instanceof GdlRelation) {
-                    GdlRelation relation = (GdlRelation) sentence;
-                    if(relation.getName().equals(NEXT)) {
-                        p.setName(GdlPool.getProposition(GdlPool.getConstant("anon")));
-                    }
+    //TODO: This seems slow on brawl. Any particular reason? Ditto for knightmove.
+    private static void removeNeverLegalInputs(
+            Map<GdlSentence, Component> components,
+            Map<GdlSentence, Component> negations, Constant trueComponent,
+            Constant falseComponent) throws InterruptedException {
+        Set<GdlSentence> legals = new HashSet<GdlSentence>();
+        for (GdlSentence sentence : components.keySet()) {
+            if (sentence.getName() == LEGAL) {
+                legals.add(sentence);
+            }
+        }
+        Set<GdlSentence> inputsToRemove = new HashSet<GdlSentence>();
+        for (Entry<GdlSentence, Component> entry : components.entrySet()) {
+            ConcurrencyUtils.checkForInterruption();
+            if (entry.getKey().getName() == DOES) {
+                //Check if there's a corresponding input prop..
+                //				inputsToRemove.add(entry.getKey());
+                GdlRelation doesSentence = (GdlRelation) entry.getKey();
+                GdlSentence legalSentence = GdlPool.getRelation(LEGAL, doesSentence.getBody());
+                if (!legals.contains(legalSentence)) {
+                    inputsToRemove.add(doesSentence);
                 }
             }
+        }
+        //Now actually remove them
+        //I believe these steps will work?
+        if (!inputsToRemove.isEmpty()) {
+            for (GdlSentence inputToRemove : inputsToRemove) {
+                Component comp = components.get(inputToRemove);
+                comp.addInput(falseComponent);
+                falseComponent.addOutput(comp);
+            }
+            optimizeAwayTrueAndFalse(components, negations, trueComponent, falseComponent);
         }
     }
 
@@ -373,6 +436,37 @@ public class OptimizingPropNetFactory {
             optimizeAwayTrueAndFalse(components, negations, trueComponent, falseComponent);
 
         }
+    }
+
+    public static void removeZeroArityGates(
+            PropNet pn) {
+        Constant trueComponent = findOrCreateConstant(pn, true);
+        Constant falseComponent = findOrCreateConstant(pn, false);
+
+        for (Component comp : pn.getComponents()) {
+            if (comp.getInputs().size() == 0) {
+                if (comp instanceof And) {
+                    Components.addLink(trueComponent, comp);
+                } else if (comp instanceof Or) {
+                    Components.addLink(falseComponent, comp);
+                }
+            }
+        }
+
+        optimizeAwayTrueAndFalse(pn, trueComponent, falseComponent);
+    }
+
+    private static Constant findOrCreateConstant(PropNet pn, boolean value) {
+        for (Component component : pn.getComponents()) {
+            if (component instanceof Constant && component.getValue() == value) {
+                return (Constant) component;
+            }
+        }
+
+        //Create and add to propnet
+        Constant constant = new Constant(value);
+        pn.addComponent(constant);
+        return constant;
     }
 
     /**
@@ -494,8 +588,9 @@ public class OptimizingPropNetFactory {
                     trueComponent.addOutput(child);
                 }
                 not.removeAllOutputs();
-                if(pn != null)
+                if (pn != null) {
                     pn.removeComponent(not);
+                }
             } else if(output instanceof Transition) {
                 //???
                 System.err.println("Fix optimizeAwayFalse's case for Transitions");
@@ -615,14 +710,18 @@ public class OptimizingPropNetFactory {
 
 
     private static boolean hasNonessentialChildren(Component trueComponent) {
-        for(Component child : trueComponent.getOutputs()) {
-            if(child instanceof Transition)
+        for (Component child : trueComponent.getOutputs()) {
+            if (child instanceof Transition) {
                 continue;
-            if(!isEssentialProposition(child))
+            }
+            if (!isEssentialProposition(child)) {
                 return true;
+            }
             //We don't want any grandchildren, either
-            if(!child.getOutputs().isEmpty())
+            //TODO: Properly fix these cases
+            if (!child.getOutputs().isEmpty()) {
                 return true;
+            }
         }
         return false;
     }
@@ -664,7 +763,8 @@ public class OptimizingPropNetFactory {
     }
 
 
-    private static void addTransitions(Map<GdlSentence, Component> components) {
+    private static void addTransitions(Map<GdlSentence, Component> components,
+            boolean verbose) {
         for(Entry<GdlSentence, Component> entry : components.entrySet()) {
             GdlSentence sentence = entry.getKey();
 
@@ -676,7 +776,8 @@ public class OptimizingPropNetFactory {
                 //There might be no true component (for example, because the bases
                 //told us so). If that's the case, don't have a transition.
                 if(trueComponent == null) {
-                    // Skipping transition to supposedly impossible 'trueSentence'
+                    if(verbose)
+                        System.out.println("Skipping transition to supposedly impossible " + trueSentence);
                     continue;
                 }
                 Transition transition = new Transition();
@@ -692,7 +793,7 @@ public class OptimizingPropNetFactory {
     //TODO: This can give problematic results if interpreted in
     //the standard way (see test_case_3d)
     private static void setUpInit(Map<GdlSentence, Component> components,
-            Constant trueComponent, Constant falseComponent) {
+            Constant trueComponent, Constant falseComponent, Map<Set<Component>, Or> orCache) throws InterruptedException {
         Proposition initProposition = new Proposition(GdlPool.getProposition(INIT_CAPS));
         for(Entry<GdlSentence, Component> entry : components.entrySet()) {
             //Is this something that will be true?
@@ -702,6 +803,9 @@ public class OptimizingPropNetFactory {
                     GdlSentence trueSentence = GdlPool.getRelation(TRUE, entry.getKey().getBody());
                     //System.out.println("True sentence from init: " + trueSentence);
                     Component trueSentenceComponent = components.get(trueSentence);
+                    if (trueSentenceComponent == null) {
+                        throw new RuntimeException("Couldn't find true sentence component for " + trueSentence + ", check your base rules");
+                    }
                     if(trueSentenceComponent.getInputs().isEmpty()) {
                         //Case where there is no transition input
                         //Add the transition input, connect to init, continue loop
@@ -722,10 +826,8 @@ public class OptimizingPropNetFactory {
                         //input and init go into or, or goes into transition
                         input.removeOutput(transition);
                         transition.removeInput(input);
-                        List<Component> orInputs = new ArrayList<Component>(2);
-                        orInputs.add(input);
-                        orInputs.add(initProposition);
-                        orify(orInputs, transition, falseComponent);
+                        Set<Component> orInputs = ImmutableSet.of(input, initProposition);
+                        orify(orInputs, transition, falseComponent, orCache);
                     }
                 }
             }
@@ -735,13 +837,16 @@ public class OptimizingPropNetFactory {
     /**
      * Adds an or gate connecting the inputs to produce the output.
      * Handles special optimization cases like a true/false input.
+     * @throws InterruptedException
      */
-    private static void orify(Collection<Component> inputs, Component output, Constant falseProp) {
+    private static void orify(Set<Component> inputs, Component output, Constant falseProp,
+            Map<Set<Component>, Or> orCache) throws InterruptedException {
         //TODO: Look for already-existing ors with the same inputs?
         //Or can this be handled with a GDL transformation?
 
         //Special case: An input is the true constant
         for(Component in : inputs) {
+            ConcurrencyUtils.checkForInterruption();
             if(in instanceof Constant && in.getValue()) {
                 //True constant: connect that to the component, done
                 in.addOutput(output);
@@ -755,41 +860,49 @@ public class OptimizingPropNetFactory {
         //What if that "or" gate has multiple outputs? Could that happen?
 
         //For reals... just skip over any false constants
-        Or or = new Or();
-        for(Component in : inputs) {
-            if(!(in instanceof Constant)) {
-                in.addOutput(or);
-                or.addInput(in);
+        if (USE_GATE_INPUT_CACHING && orCache.containsKey(inputs)) {
+            Or or = orCache.get(inputs);
+            or.addOutput(output);
+            output.addInput(or);
+        } else {
+            Or or = new Or();
+            for(Component in : inputs) {
+                ConcurrencyUtils.checkForInterruption();
+                if(!(in instanceof Constant)) {
+                    in.addOutput(or);
+                    or.addInput(in);
+                }
             }
+            //What if they're all false? (Or inputs is empty?) Then no inputs at this point...
+            if(or.getInputs().isEmpty()) {
+                //Hook up to "false"
+                falseProp.addOutput(output);
+                output.addInput(falseProp);
+                return;
+            }
+            //If there's just one, on the other hand, don't use the or gate
+            if(or.getInputs().size() == 1) {
+                Component in = or.getSingleInput();
+                in.removeOutput(or);
+                or.removeInput(in);
+                in.addOutput(output);
+                output.addInput(in);
+                return;
+            }
+            or.addOutput(output);
+            output.addInput(or);
+            orCache.put(inputs, or);
         }
-        //What if they're all false? (Or inputs is empty?) Then no inputs at this point...
-        if(or.getInputs().isEmpty()) {
-            //Hook up to "false"
-            falseProp.addOutput(output);
-            output.addInput(falseProp);
-            return;
-        }
-        //If there's just one, on the other hand, don't use the or gate
-        if(or.getInputs().size() == 1) {
-            Component in = or.getSingleInput();
-            in.removeOutput(or);
-            or.removeInput(in);
-            in.addOutput(output);
-            output.addInput(in);
-            return;
-        }
-        or.addOutput(output);
-        output.addInput(or);
     }
 
-    //TODO: This code is currently used by multiple classes, so perhaps it should be
-    //factored out into the SentenceModel.
+    //TODO: This code is currently used by multiple classes (copy/pasted),
+    //so it should be factored out into another class.
     private static List<SentenceForm> getTopologicalOrdering(
             Set<SentenceForm> forms,
             Multimap<SentenceForm, SentenceForm> dependencyGraph, boolean usingBase, boolean usingInput) throws InterruptedException {
         //We want each form as a key of the dependency graph to
         //follow all the forms in the dependency graph, except maybe itself
-        Queue<SentenceForm> queue = new LinkedList<SentenceForm>(forms);
+        Queue<SentenceForm> queue = new ArrayDeque<SentenceForm>(forms);
         List<SentenceForm> ordering = new ArrayList<SentenceForm>(forms.size());
         Set<SentenceForm> alreadyOrdered = new HashSet<SentenceForm>();
         while(!queue.isEmpty()) {
@@ -838,7 +951,7 @@ public class OptimizingPropNetFactory {
             Set<SentenceForm> recursionForms,
             Map<GdlSentence, Component> temporaryComponents, Map<GdlSentence, Component> temporaryNegations,
             Map<SentenceForm, FunctionInfo> functionInfoMap, ConstantChecker constantChecker,
-            Map<SentenceForm, Collection<GdlSentence>> completedSentenceFormValues) throws InterruptedException {
+            Map<SentenceForm, Collection<GdlSentence>> completedSentenceFormValues, Map<Set<Component>, Or> orCache, Map<Set<Component>, And> andCache) throws InterruptedException {
         //This is the meat of it (along with the entire Assignments class).
         //We need to enumerate the possible propositions in the sentence form...
         //We also need to hook up the sentence form to the inputs that can make it true.
@@ -909,7 +1022,7 @@ public class OptimizingPropNetFactory {
                 GdlSentence sentence = CommonTransforms.replaceVariables(rule.getHead(), assignment);
 
                 //Now we go through the conjuncts as before, but we wait to hook them up.
-                List<Component> componentsToConnect = new ArrayList<Component>(rule.arity());
+                Set<Component> componentsToConnect = new HashSet<Component>(rule.arity());
                 for(GdlLiteral literal : rule.getBody()) {
                     if(literal instanceof GdlSentence) {
                         //Get the sentence post-substitutions
@@ -1038,7 +1151,7 @@ public class OptimizingPropNetFactory {
                     //Connect all the components
                     Proposition andComponent = new Proposition(TEMP);
 
-                    andify(componentsToConnect, andComponent, trueComponent);
+                    andify(componentsToConnect, andComponent, trueComponent, andCache);
                     if(!isThisConstant(andComponent, falseComponent)) {
                         if(!inputsToOr.containsKey(sentence))
                             inputsToOr.put(sentence, new HashSet<Component>());
@@ -1061,6 +1174,7 @@ public class OptimizingPropNetFactory {
             Set<Component> inputs = entry.getValue();
             Set<Component> realInputs = new HashSet<Component>();
             for(Component input : inputs) {
+                ConcurrencyUtils.checkForInterruption();
                 if(input instanceof Constant || input.getInputs().size() == 0) {
                     realInputs.add(input);
                 } else {
@@ -1071,7 +1185,7 @@ public class OptimizingPropNetFactory {
             }
 
             Proposition prop = new Proposition(sentence);
-            orify(realInputs, prop, falseComponent);
+            orify(realInputs, prop, falseComponent, orCache);
             components.put(sentence, prop);
         }
 
@@ -1129,8 +1243,8 @@ public class OptimizingPropNetFactory {
         return GdlUtils.getVariables(literal);
     }
 
-
-    private static void andify(List<Component> inputs, Component output, Constant trueProp) {
+    private static void andify(Set<Component> inputs, Component output, Constant trueProp,
+            Map<Set<Component>, And> andCache) {
         //Special case: If the inputs include false, connect false to thisComponent
         for(Component c : inputs) {
             if(c instanceof Constant && !c.getValue()) {
@@ -1141,32 +1255,39 @@ public class OptimizingPropNetFactory {
             }
         }
 
-        //For reals... just skip over any true constants
-        And and = new And();
-        for(Component in : inputs) {
-            if(!(in instanceof Constant)) {
-                in.addOutput(and);
-                and.addInput(in);
+        if (USE_GATE_INPUT_CACHING && andCache.containsKey(inputs)) {
+            And and = andCache.get(inputs);
+            and.addOutput(output);
+            output.addInput(and);
+        } else {
+            //For reals... just skip over any true constants
+            And and = new And();
+            for(Component in : inputs) {
+                if(!(in instanceof Constant)) {
+                    in.addOutput(and);
+                    and.addInput(in);
+                }
             }
+            //What if they're all true? (Or inputs is empty?) Then no inputs at this point...
+            if(and.getInputs().isEmpty()) {
+                //Hook up to "true"
+                trueProp.addOutput(output);
+                output.addInput(trueProp);
+                return;
+            }
+            //If there's just one, on the other hand, don't use the and gate
+            if(and.getInputs().size() == 1) {
+                Component in = and.getSingleInput();
+                in.removeOutput(and);
+                and.removeInput(in);
+                in.addOutput(output);
+                output.addInput(in);
+                return;
+            }
+            and.addOutput(output);
+            output.addInput(and);
+            andCache.put(inputs, and);
         }
-        //What if they're all true? (Or inputs is empty?) Then no inputs at this point...
-        if(and.getInputs().isEmpty()) {
-            //Hook up to "true"
-            trueProp.addOutput(output);
-            output.addInput(trueProp);
-            return;
-        }
-        //If there's just one, on the other hand, don't use the and gate
-        if(and.getInputs().size() == 1) {
-            Component in = and.getSingleInput();
-            in.removeOutput(and);
-            and.removeInput(in);
-            in.addOutput(output);
-            output.addInput(in);
-            return;
-        }
-        and.addOutput(output);
-        output.addInput(and);
     }
 
     /**
@@ -1308,12 +1429,15 @@ public class OptimizingPropNetFactory {
         }
         //Keep INIT, for those who use it
         Proposition initProposition = pn.getInitProposition();
-        toAdd.add(Pair.of((Component) initProposition, Type.BOTH));
+        if (initProposition != null) {
+            toAdd.add(Pair.of((Component) initProposition, Type.BOTH));
+        }
 
         while (!toAdd.isEmpty()) {
             ConcurrencyUtils.checkForInterruption();
             Pair<Component, Type> curEntry = toAdd.pop();
             Component curComp = curEntry.left;
+            Preconditions.checkNotNull(curComp);
             Type newInputType = curEntry.right;
             Type oldType = reachability.get(curComp);
             if (oldType == null) {
@@ -1479,7 +1603,7 @@ public class OptimizingPropNetFactory {
      *
      * @param pn
      */
-    public static void removeAnonymousPropositions(PropNet pn) {
+    public static void removeAnonymousPropositions(PropNet pn, boolean keepNexts) {
         List<Proposition> toSplice = new ArrayList<Proposition>();
         List<Proposition> toReplaceWithFalse = new ArrayList<Proposition>();
         for(Proposition p : pn.getPropositions()) {
@@ -1488,25 +1612,29 @@ public class OptimizingPropNetFactory {
                 //It's a base proposition
                 continue;
             GdlSentence sentence = p.getName();
-            if(sentence instanceof GdlProposition) {
-                if(sentence.getName() == TERMINAL || sentence.getName() == INIT_CAPS)
+            if (sentence instanceof GdlProposition) {
+                if (sentence.getName() == TERMINAL || sentence.getName() == INIT_CAPS) {
                     continue;
+                }
             } else {
                 GdlRelation relation = (GdlRelation) sentence;
                 GdlConstant name = relation.getName();
                 if(name == LEGAL || name == GOAL || name == DOES
-                        || name == INIT)
+                        || name == INIT
+                        || (keepNexts && name == NEXT))
                     continue;
             }
-            if(p.getInputs().size() < 1) {
+            if (p.getInputs().size() < 1) {
                 //Needs to be handled separately...
                 //because this is an always-false true proposition
                 //and it might have and gates as outputs
                 toReplaceWithFalse.add(p);
                 continue;
             }
-            if(p.getInputs().size() != 1)
+            if (p.getInputs().size() != 1) {
                 System.err.println("Might have falsely declared " + p.getName() + " to be unimportant?");
+                System.out.println("Inputs are: " + p.getInputs().stream().map(input -> input.getShortName()).collect(Collectors.toList()));
+            }
             //Not important
             //System.out.println("Removing " + p);
             toSplice.add(p);
@@ -1531,4 +1659,30 @@ public class OptimizingPropNetFactory {
             System.out.println("Should be replacing " + p + " with false, but should do that in the OPNF, really; better equipped to do that there");
         }
     }
+
+    public static PropNet create(final List<Gdl> description, long timeoutInMillis) throws TimeoutException,
+    InterruptedException {
+        Callable<PropNet> callable =
+                new Callable<PropNet> () {
+            @Override
+            public PropNet call()
+                    throws Exception {
+                return create(description);
+            }
+        };
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Future<PropNet> future = executor.submit(callable);
+        try {
+            return future.get(timeoutInMillis, TimeUnit.MILLISECONDS);
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e.getCause());
+        } catch (TimeoutException e) {
+            future.cancel(true);
+            executor.shutdownNow();
+            throw e;
+        }
+    }
+
+
 }

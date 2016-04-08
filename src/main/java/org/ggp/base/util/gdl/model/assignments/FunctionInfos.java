@@ -29,11 +29,11 @@ public class FunctionInfos {
             if(term instanceof GdlVariable
                     && !multipleVars.contains(term)) {
                 GdlVariable var = (GdlVariable) term;
-                if(candidateVars.contains(var)
+                if (candidateVars.contains(var)
                         || nonCandidateVars.contains(var)) {
                     multipleVars.add(var);
                     candidateVars.remove(var);
-                } else if(dependentSlots.get(i)) {
+                } else if (dependentSlots.get(i)) {
                     candidateVars.add(var);
                 } else {
                     nonCandidateVars.add(var);

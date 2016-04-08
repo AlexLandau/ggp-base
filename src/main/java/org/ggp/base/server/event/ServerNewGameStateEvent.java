@@ -17,4 +17,9 @@ public final class ServerNewGameStateEvent extends Event
     {
         return state;
     }
+
+    @Override
+    public String toString() {
+        return "Server new game state event";
+    }
 }

@@ -15,12 +15,18 @@ import com.google.common.collect.SetMultimap;
 public class ImmutableConstantChecker implements ConstantChecker {
     private final ImmutableSentenceFormModel sentenceModel;
     private final ImmutableSetMultimap<SentenceForm, GdlSentence> sentencesByForm;
+    private final ImmutableSet<GdlSentence> allSentences;
 
     private ImmutableConstantChecker(ImmutableSentenceFormModel sentenceModel,
             ImmutableSetMultimap<SentenceForm, GdlSentence> sentencesByForm) {
         Preconditions.checkArgument(sentenceModel.getConstantSentenceForms().containsAll(sentencesByForm.keySet()));
         this.sentenceModel = sentenceModel;
         this.sentencesByForm = sentencesByForm;
+        ImmutableSet.Builder<GdlSentence> allSentencesBuilder = ImmutableSet.builder();
+        for (GdlSentence sentence : sentencesByForm.values()) {
+            allSentencesBuilder.add(sentence);
+        }
+        this.allSentences = allSentencesBuilder.build();
     }
 
     /**
@@ -76,9 +82,7 @@ public class ImmutableConstantChecker implements ConstantChecker {
 
     @Override
     public boolean isTrueConstant(GdlSentence sentence) {
-        //TODO: This could be even more efficient; we don't need to bucket by form
-        SentenceForm form = sentenceModel.getSentenceForm(sentence);
-        return sentencesByForm.get(form).contains(sentence);
+        return allSentences.contains(sentence);
     }
 
     @Override

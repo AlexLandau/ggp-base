@@ -11,4 +11,9 @@ public final class ServerAbortedMatchEvent extends Event implements Serializable
     {
         ;
     }
+
+    @Override
+    public String toString() {
+        return "Server aborted match event";
+    }
 }

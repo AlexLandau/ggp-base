@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.ggp.base.player.GamePlayer;
+import org.ggp.base.player.GamePlayer.BadPortBehavior;
 import org.ggp.base.player.gamer.Gamer;
 import org.ggp.base.player.gamer.statemachine.random.RandomGamer;
 import org.ggp.base.server.GameServer;
@@ -202,9 +203,10 @@ public class PlayerTester {
     }
 
     public static Map<String, Double> getBenchmarkScores(Gamer aGamer) throws IOException, SymbolFormatException {
-        GamePlayer player = new GamePlayer(3141, aGamer);
+        GamePlayer player = new GamePlayer(3141, aGamer, BadPortBehavior.FIND_AN_OPEN_PORT);
+        int gamerPort = player.getGamerPort();
         player.start();
-        Map<String, Double> theScores = getBenchmarkScores("127.0.0.1:3141");
+        Map<String, Double> theScores = getBenchmarkScores("127.0.0.1:" + gamerPort);
         player.shutdown();
         return theScores;
     }

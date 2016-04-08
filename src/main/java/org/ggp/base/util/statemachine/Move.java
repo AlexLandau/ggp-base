@@ -3,8 +3,12 @@ package org.ggp.base.util.statemachine;
 import java.io.Serializable;
 
 import org.ggp.base.util.gdl.factory.GdlFactory;
+import org.ggp.base.util.gdl.grammar.GdlPool;
 import org.ggp.base.util.gdl.grammar.GdlTerm;
+import org.ggp.base.util.ruleengine.RuleEngineMove;
+import org.ggp.base.util.symbol.factory.SymbolFactory;
 import org.ggp.base.util.symbol.factory.exceptions.SymbolFormatException;
+import org.ggp.base.util.symbol.grammar.Symbol;
 
 /**
  * A Move represents a possible move that can be made by a role. Each
@@ -15,7 +19,7 @@ import org.ggp.base.util.symbol.factory.exceptions.SymbolFormatException;
  * only express the action itself.
  */
 @SuppressWarnings("serial")
-public class Move implements Serializable
+public class Move implements Serializable, RuleEngineMove
 {
     protected final GdlTerm contents;
 
@@ -58,5 +62,9 @@ public class Move implements Serializable
     public String toString()
     {
         return contents.toString();
+    }
+
+    public Move getImmersedCopy() {
+        return new Move(GdlPool.immerse(contents));
     }
 }

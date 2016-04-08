@@ -25,6 +25,7 @@ import org.ggp.base.apps.player.detail.DetailPanel;
 import org.ggp.base.apps.player.match.MatchPanel;
 import org.ggp.base.apps.player.network.NetworkPanel;
 import org.ggp.base.player.GamePlayer;
+import org.ggp.base.player.GamePlayer.BadPortBehavior;
 import org.ggp.base.player.gamer.Gamer;
 import org.ggp.base.util.reflection.ProjectSearcher;
 import org.ggp.base.util.ui.NativeUI;
@@ -143,9 +144,9 @@ public final class Player extends JPanel
                     ConfigPanel configPanel = null;
                     Gamer gamer = null;
 
-                    Class<?> gamerClass = gamers.get(typeComboBox.getSelectedIndex());
+                    Class<? extends Gamer> gamerClass = gamers.get(typeComboBox.getSelectedIndex());
                     try {
-                        gamer = (Gamer) gamerClass.newInstance();
+                        gamer = gamerClass.newInstance();
                     } catch(Exception ex) { throw new RuntimeException(ex); }
                     detailPanel = gamer.getDetailPanel();
                     configPanel = gamer.getConfigPanel();
@@ -153,7 +154,7 @@ public final class Player extends JPanel
                     gamer.addObserver(matchPanel);
                     gamer.addObserver(detailPanel);
 
-                    GamePlayer player = new GamePlayer(port, gamer);
+                    GamePlayer player = new GamePlayer(port, gamer, BadPortBehavior.FIND_AN_OPEN_PORT);
                     player.addObserver(networkPanel);
                     player.start();
 

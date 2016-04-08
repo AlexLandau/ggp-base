@@ -35,4 +35,18 @@ public final class And extends Component
         return toDot("invhouse", "grey", "AND");
     }
 
+    @Override
+    public String getShortName() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("and(");
+        for (Component component : getInputs()) {
+            sb.append(component.getShortName()).append(", ");
+        }
+        if (getInputs().size() > 0) {
+            sb.delete(sb.length() - 2, sb.length());
+        }
+        sb.append(")");
+        return sb.toString();
+    }
+
 }

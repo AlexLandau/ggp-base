@@ -1,6 +1,8 @@
 package org.ggp.base.util.statemachine;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.ggp.base.util.gdl.grammar.Gdl;
@@ -8,10 +10,14 @@ import org.ggp.base.util.gdl.grammar.GdlConstant;
 import org.ggp.base.util.gdl.grammar.GdlSentence;
 import org.ggp.base.util.gdl.grammar.GdlTerm;
 import org.ggp.base.util.logging.GamerLogger;
+import org.ggp.base.util.propnet.architecture.Component;
+import org.ggp.base.util.propnet.architecture.PropNet;
 import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
+
+import com.google.common.collect.ImmutableList;
 
 
 /**
@@ -332,7 +338,27 @@ public class FailsafeStateMachine extends StateMachine
     }
 
     @Override
-    public MachineState performDepthCharge(MachineState state, int[] theDepth) throws TransitionDefinitionException, MoveDefinitionException {
+    public Map<Role, Move> getGebMoves(MachineState state) {
+        if(theBackingMachine == null)
+            return Collections.emptyMap();
+
+        try {
+            return theBackingMachine.getGebMoves(state);
+        } catch(Exception e) {
+            failGracefully(e, null);
+        } catch(ThreadDeath d) {
+            throw d;
+        } catch(OutOfMemoryError e) {
+            throw e;
+        } catch(Error e) {
+            failGracefully(null, e);
+        }
+
+        return getGebMoves(state);
+    }
+
+    @Override
+    public ImmutableList<Integer> performDepthCharge(MachineState state, int[] theDepth) throws TransitionDefinitionException, MoveDefinitionException {
         if(theBackingMachine == null)
             return null;
 
@@ -405,5 +431,73 @@ public class FailsafeStateMachine extends StateMachine
 
     public StateMachine getBackingMachine() {
         return theBackingMachine;
+    }
+
+    @Override
+    public StateMachine getSynchronizedCopy() {
+        StateMachine copy = new FailsafeStateMachine(theBackingMachine.getSynchronizedCopy());
+        copy.initialize(gameDescription);
+        return copy;
+    }
+
+    @Override
+    public MachineState translateState(MachineState state) {
+        if(theBackingMachine == null)
+            return null;
+
+        try {
+            return theBackingMachine.translateState(state);
+        } catch(Exception e) {
+            failGracefully(e, null);
+        } catch(ThreadDeath d) {
+            throw d;
+        } catch(OutOfMemoryError e) {
+            throw e;
+        } catch(Error e) {
+            failGracefully(null, e);
+        }
+
+        return translateState(state);
+    }
+
+    @Override
+    public boolean isNative(MachineState state) {
+        if(theBackingMachine == null)
+            return false;
+
+        try {
+            return theBackingMachine.isNative(state);
+        } catch(Exception e) {
+            failGracefully(e, null);
+        } catch(ThreadDeath d) {
+            throw d;
+        } catch(OutOfMemoryError e) {
+            throw e;
+        } catch(Error e) {
+            failGracefully(null, e);
+        }
+
+        return isNative(state);
+    }
+
+    @Override
+    public boolean isPropNetBased() {
+        return theBackingMachine.isPropNetBased();
+    }
+
+    @Override
+    public PropNet getPropNet() {
+        return theBackingMachine.getPropNet();
+    }
+
+    @Override
+    public boolean getComponentValue(MachineState state, Component component) {
+        return theBackingMachine.getComponentValue(state, component);
+    }
+
+    @Override
+    public int getComponentTrueInputsCount(MachineState state,
+            Component component) {
+        return theBackingMachine.getComponentTrueInputsCount(state, component);
     }
 }
