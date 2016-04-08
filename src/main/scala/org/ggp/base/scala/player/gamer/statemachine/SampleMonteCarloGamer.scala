@@ -18,12 +18,14 @@ class SampleMonteCarloGamer extends StateMachineGamer {
     val sm = getStateMachine
     val currState = getCurrentState
     val moves = JavaConversions.asScalaIterator(sm.getLegalMoves(currState, role).iterator())
+    val roles = sm.getRoles()
+    val roleIndex = roles.indexOf(role)
 
     def findBestMoveFromMoves(moves: List[Move]): Move = {
       def improveMoveEstimatesUntil(estimates: Map[Move,Double], untilCond: => Boolean)(iteration: Int = 0): Map[Move,Double] = {
         def improveEstimate(currentEstimate: (Move, Double)): (Move, Double) =  currentEstimate match {
           case (move, score) => {
-            val sampleScore: Double = sm.getGoal(sm.performDepthCharge(sm.getRandomNextState(currState, role, move), null), role)
+            val sampleScore = sm.performDepthCharge(sm.getRandomNextState(currState, role, move), null).get(roleIndex)
             (move, (score*iteration + sampleScore)/(iteration+1))
           }
         }
