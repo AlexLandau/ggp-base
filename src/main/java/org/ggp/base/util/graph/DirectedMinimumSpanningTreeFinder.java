@@ -45,7 +45,7 @@ public class DirectedMinimumSpanningTreeFinder {
      * to indicate provenance from earlier cycles.
      */
     /**
-     * Input format: Map from pair of <parent, child> to minimum weight for that edge
+     * Input format: Map from pair of (parent, child) to minimum weight for that edge
      *
      * @return Map from children to parents
      */

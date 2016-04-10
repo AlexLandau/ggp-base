@@ -21,7 +21,7 @@ public class FileUtils {
     }
 
     /**
-     * @param filePath the file to open.
+     * @param file the file to open.
      */
     public static String readFileAsString(File file) {
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
