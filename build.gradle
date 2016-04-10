@@ -136,3 +136,6 @@ task gameServerRunner(type: JavaExec) {
 task wrapper(type: Wrapper) {
     gradleVersion = '2.12'
 }
+
+// This only needs to be uncommented when publishing to Maven.
+// apply from: 'publish.gradle'
