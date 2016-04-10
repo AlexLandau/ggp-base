@@ -1,0 +1,66 @@
+apply plugin: 'maven'
+apply plugin: 'signing'
+
+// Define how we publish artifacts to Maven.
+// Derived from instructions on the Central Repository site:
+// http://central.sonatype.org/pages/gradle.html
+group = "net.alloyggp"
+version = "0.0.1"
+task javadocJar(type: Jar) {
+    classifier = 'javadoc'
+    from javadoc
+}
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+artifacts {
+    archives javadocJar, sourcesJar
+}
+signing {
+    sign configurations.archives
+}
+uploadArchives {
+  repositories {
+    mavenDeployer {
+      beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+      repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+        authentication(userName: ossrhUsername, password: ossrhPassword)
+      }
+
+      snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+        authentication(userName: ossrhUsername, password: ossrhPassword)
+      }
+
+      pom.project {
+        name 'alloy-ggp-base'
+        packaging 'jar'
+        artifactId = "alloy-ggp-base"
+        description 'A modified version of the GGP-Base library for Alloy.'
+        url 'https://github.com/AlexLandau/ggp-base'
+
+        scm {
+          connection 'scm:git:git@github.com:AlexLandau/ggp-base.git'
+          developerConnection 'scm:git:git@github.com:AlexLandau/ggp-base.git'
+          url 'git@github.com:AlexLandau/ggp-base.git'
+        }
+
+        licenses {
+          license {
+            name 'Apache License 2.0'
+            url 'http://www.apache.org/licenses/LICENSE-2.0'
+          }
+        }
+
+        developers {
+          developer {
+            id 'AlexLandau'
+            name 'Alex Landau'
+            email 'alex@alloyggp.net'
+          }
+        }
+      }
+    }
+  }
+}
