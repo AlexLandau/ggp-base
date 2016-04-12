@@ -9,10 +9,10 @@ import java.util.stream.IntStream;
 import com.google.common.collect.ImmutableList;
 
 import net.alloyggp.escaperope.rope.ropify.CoreWeavers;
-import net.alloyggp.escaperope.rope.ropify.ListRopeWeaver;
+import net.alloyggp.escaperope.rope.ropify.ListWeaver;
 import net.alloyggp.escaperope.rope.ropify.RopeBuilder;
 import net.alloyggp.escaperope.rope.ropify.RopeList;
-import net.alloyggp.escaperope.rope.ropify.RopeWeaver;
+import net.alloyggp.escaperope.rope.ropify.Weaver;
 
 public class ImmutableIntArray {
     private final int[] array;
@@ -117,7 +117,7 @@ public class ImmutableIntArray {
         return stream().boxed().collect(Immutables.collectList());
     }
 
-    public static final RopeWeaver<ImmutableIntArray> WEAVER = new ListRopeWeaver<ImmutableIntArray>() {
+    public static final Weaver<ImmutableIntArray> WEAVER = new ListWeaver<ImmutableIntArray>() {
         @Override
         protected void addToList(ImmutableIntArray object, RopeBuilder list) {
             list.add(object.array, CoreWeavers.INT_ARRAY);

@@ -14,10 +14,10 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.ImmutableSortedSet;
 
-import net.alloyggp.escaperope.rope.ropify.ListRopeWeaver;
+import net.alloyggp.escaperope.rope.ropify.ListWeaver;
 import net.alloyggp.escaperope.rope.ropify.RopeBuilder;
 import net.alloyggp.escaperope.rope.ropify.RopeList;
-import net.alloyggp.escaperope.rope.ropify.RopeWeaver;
+import net.alloyggp.escaperope.rope.ropify.Weaver;
 
 public class Immutables {
     private Immutables() {
@@ -140,8 +140,8 @@ public class Immutables {
         };
     }
 
-    public static <T> RopeWeaver<ImmutableList<T>> listWeaver(RopeWeaver<T> innerWeaver) {
-        return new ListRopeWeaver<ImmutableList<T>>() {
+    public static <T> Weaver<ImmutableList<T>> listWeaver(Weaver<T> innerWeaver) {
+        return new ListWeaver<ImmutableList<T>>() {
             @Override
             protected void addToList(ImmutableList<T> objects, RopeBuilder list) {
                 for (T object : objects) {
@@ -160,8 +160,8 @@ public class Immutables {
         };
     }
 
-    public static <K, V> RopeWeaver<ImmutableSetMultimap<K, V>> setMultimapWeaver(RopeWeaver<K> keyWeaver, RopeWeaver<V> valueWeaver) {
-        return new ListRopeWeaver<ImmutableSetMultimap<K,V>>() {
+    public static <K, V> Weaver<ImmutableSetMultimap<K, V>> setMultimapWeaver(Weaver<K> keyWeaver, Weaver<V> valueWeaver) {
+        return new ListWeaver<ImmutableSetMultimap<K,V>>() {
             @Override
             protected void addToList(ImmutableSetMultimap<K, V> map, RopeBuilder list) {
                 for (K key : map.keySet()) {
@@ -184,8 +184,8 @@ public class Immutables {
         };
     }
 
-    public static <T> RopeWeaver<ImmutableSet<T>> setWeaver(RopeWeaver<T> innerWeaver) {
-        return new ListRopeWeaver<ImmutableSet<T>>() {
+    public static <T> Weaver<ImmutableSet<T>> setWeaver(Weaver<T> innerWeaver) {
+        return new ListWeaver<ImmutableSet<T>>() {
             @Override
             protected void addToList(ImmutableSet<T> set, RopeBuilder list) {
                 for (T element : set) {
