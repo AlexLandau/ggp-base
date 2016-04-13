@@ -12,11 +12,6 @@ repositories {
     mavenCentral()
 }
 
-/*
- * For now, instead of using an online library repository (e.g. Maven), we keep
- * local versions of .jars to reduce the number of things that can go wrong
- * during setup.
- */
 dependencies {
     compile 'com.google.code.findbugs:jsr305:3.0.0'
     compile 'com.google.guava:guava:14.0.1'
