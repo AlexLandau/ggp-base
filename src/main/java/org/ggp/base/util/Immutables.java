@@ -1,6 +1,7 @@
 package org.ggp.base.util;
 
 import java.util.Comparator;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BinaryOperator;
@@ -10,6 +11,7 @@ import java.util.stream.Collector;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.ImmutableSortedSet;
@@ -198,6 +200,30 @@ public class Immutables {
                 ImmutableSet.Builder<T> builder = ImmutableSet.builder();
                 for (int i = 0; i < list.size(); i++) {
                     builder.add(list.get(i, innerWeaver));
+                }
+                return builder.build();
+            }
+        };
+    }
+
+    public static <K, V> Weaver<ImmutableMap<K, V>> mapWeaver(Weaver<K> keyWeaver, Weaver<V> valueWeaver) {
+        return new ListWeaver<ImmutableMap<K,V>>() {
+            @Override
+            protected void addToList(ImmutableMap<K, V> map, RopeBuilder list) {
+                for (Map.Entry<K, V> entry : map.entrySet()) {
+                    list.add(entry.getKey(), keyWeaver);
+                    list.add(entry.getValue(), valueWeaver);
+                }
+            }
+
+            @Override
+            protected ImmutableMap<K, V> fromRope(RopeList list) {
+                Preconditions.checkArgument(list.size() % 2 == 0);
+                ImmutableMap.Builder<K, V> builder = ImmutableMap.builder();
+                for (int i = 0; i < list.size(); i += 2) {
+                    K key = list.get(i, keyWeaver);
+                    V value = list.get(i + 1, valueWeaver);
+                    builder.put(key, value);
                 }
                 return builder.build();
             }
