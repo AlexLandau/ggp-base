@@ -684,7 +684,7 @@ public class PropNetAnnotater {
      * @param args
      */
     public static void main(String[] args) {
-        List<Gdl> description = GameRepository.getDefaultRepository().getGame("conn4").getRules();;
+        List<Gdl> description = GameRepository.getDefaultRepository().getGame("conn4").getRules();
 
         PropNetAnnotater aa = new PropNetAnnotater(description);
         System.out.println("Annotations for connect four are: \n"+aa.getAnnotations());

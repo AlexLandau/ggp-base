@@ -129,8 +129,9 @@ public class GameStateRenderer {
 
     private static String getXHTMLfromGameXML(String gameXML, String XSL) {
         XSL = XSL.replace("<!DOCTYPE stylesheet [<!ENTITY ROOT \"http://games.ggp.org/base\">]>", "");
-        //        XSL = XSL.replace("&ROOT;", "http://games.ggp.org/base").trim();
-        XSL = XSL.replace("&ROOT;", "file:///C:/Users/Alex/bitbucket/Alloy/Alloy/games").trim();
+        //TODO: Find a better solution for this
+        XSL = XSL.replace("&ROOT;", "http://games.ggp.org/base").trim();
+//      XSL = XSL.replace("&ROOT;", "file:///C:/Users/Alex/bitbucket/Alloy/Alloy/games").trim();
 
         IOString game = new IOString(gameXML);
         IOString xslIOString = new IOString(XSL);

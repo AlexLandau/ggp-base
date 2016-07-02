@@ -17,7 +17,6 @@ import org.ggp.base.validator.ValidatorException;
  *
  */
 public class TransformTester {
-    @SuppressWarnings("deprecation")
     public static void main(String args[]) throws InterruptedException {
 
         final boolean showDiffs = false;

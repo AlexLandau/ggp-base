@@ -68,7 +68,7 @@ public class ConjunctDualizerTest {
             );
 
     @Test
-    public void testConjunctDualizerKeepsGamesValid() throws ValidatorException {
+    public void testConjunctDualizerKeepsGamesValid() {
         GameRepository repo = GameRepository.getDefaultRepository();
         for (String gameKey : repo.getGameKeys()) {
             if (GAME_WHITELIST.contains(gameKey)) {

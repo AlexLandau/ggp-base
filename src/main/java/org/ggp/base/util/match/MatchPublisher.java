@@ -38,7 +38,7 @@ public class MatchPublisher {
                 return new BufferedReader(new InputStreamReader(connection.getInputStream())).readLine();
             } else {
                 String errorDescription = "?";
-                try { errorDescription = new BufferedReader(new InputStreamReader(connection.getInputStream())).readLine(); } catch (Exception q) {};
+                try { errorDescription = new BufferedReader(new InputStreamReader(connection.getInputStream())).readLine(); } catch (Exception q) {}
                 throw new IOException(connection.getResponseCode() + ": " + errorDescription);
             }
         } catch (MalformedURLException e) {

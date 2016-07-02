@@ -54,7 +54,7 @@ import external.JSON.JSONObject;
  *
  * @author Sam
  */
-
+//TODO: Utility method for creating a game-appropriate rulesheet from List<Gdl>?
 public final class Game {
     private final String theKey;
     private final String theName;

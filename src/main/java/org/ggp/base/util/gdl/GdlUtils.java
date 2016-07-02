@@ -22,13 +22,16 @@ import org.ggp.base.util.gdl.grammar.GdlFunction;
 import org.ggp.base.util.gdl.grammar.GdlLiteral;
 import org.ggp.base.util.gdl.grammar.GdlNot;
 import org.ggp.base.util.gdl.grammar.GdlOr;
+import org.ggp.base.util.gdl.grammar.GdlPool;
 import org.ggp.base.util.gdl.grammar.GdlProposition;
+import org.ggp.base.util.gdl.grammar.GdlRelation;
 import org.ggp.base.util.gdl.grammar.GdlRule;
 import org.ggp.base.util.gdl.grammar.GdlSentence;
 import org.ggp.base.util.gdl.grammar.GdlTerm;
 import org.ggp.base.util.gdl.grammar.GdlVariable;
 import org.ggp.base.util.symbol.factory.exceptions.SymbolFormatException;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 
 public class GdlUtils {
@@ -272,5 +275,18 @@ public class GdlUtils {
 
     public static Comparator<Gdl> compareAlphabetically() {
         return Comparator.comparing(Gdl::toString);
+    }
+
+    public static List<GdlConstant> getRoles(List<Gdl> description) {
+        ImmutableList.Builder<GdlConstant> roles = ImmutableList.builder();
+        for (Gdl gdl : description) {
+            if (gdl instanceof GdlRelation) {
+                GdlRelation relation = (GdlRelation) gdl;
+                if (relation.getName() == GdlPool.ROLE) {
+                    roles.add((GdlConstant) relation.get(0));
+                }
+            }
+        }
+        return roles.build();
     }
 }

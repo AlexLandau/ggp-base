@@ -29,7 +29,7 @@ public class SimpleLocalGameRepository extends GameRepository {
     public static SimpleLocalGameRepository getLocalBaseRepo() {
         //TODO: Make sure this is the right place across locations
         //Basically, expect that the ggp-repository repo is checked out adjacent to this repo
-        return new SimpleLocalGameRepository(new File("../ggp-repository"));
+        return new SimpleLocalGameRepository(new File("../ggp-repository/war/root/games"));
     }
 
     @Override

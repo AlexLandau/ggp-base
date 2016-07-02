@@ -22,7 +22,7 @@ public class CanonicalJSON {
      * strategy is used. */
     static enum CanonicalizationStrategy {
         SIMPLE,
-    };
+    }
 
     /* Helper function to generate canonical strings for JSON strings */
     static String getCanonicalForm(String x, CanonicalizationStrategy s) {

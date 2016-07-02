@@ -5,6 +5,7 @@ import java.util.Set;
 
 import org.ggp.base.util.gdl.grammar.GdlSentence;
 import org.ggp.base.util.gdl.grammar.GdlTerm;
+import org.ggp.base.util.statemachine.Move;
 
 import com.google.common.collect.Lists;
 
@@ -26,6 +27,13 @@ public interface Translator<M, S> {
         List<M> results = Lists.newArrayListWithCapacity(moves.size());
         for (GdlTerm move : moves) {
             results.add(getNativeMove(move));
+        }
+        return results;
+    }
+    default List<M> getNativeMovesFromMoves(List<Move> moves) {
+        List<M> results = Lists.newArrayListWithCapacity(moves.size());
+        for (Move move : moves) {
+            results.add(getNativeMove(move.getContents()));
         }
         return results;
     }
