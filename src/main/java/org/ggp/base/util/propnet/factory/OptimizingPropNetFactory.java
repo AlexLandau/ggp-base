@@ -104,17 +104,8 @@ import com.google.common.collect.Multiset;
 public class OptimizingPropNetFactory {
     private static final boolean USE_GATE_INPUT_CACHING = true;
 
-    private static final GdlConstant LEGAL = GdlPool.getConstant("legal");
-    private static final GdlConstant NEXT = GdlPool.getConstant("next");
-    private static final GdlConstant TRUE = GdlPool.getConstant("true");
-    private static final GdlConstant DOES = GdlPool.getConstant("does");
-    private static final GdlConstant GOAL = GdlPool.getConstant("goal");
-    private static final GdlConstant INIT = GdlPool.getConstant("init");
-    //TODO: This currently doesn't actually give a different constant from INIT
+    //TODO: This currently doesn't actually give a different constant from INIT (usually)
     private static final GdlConstant INIT_CAPS = GdlPool.getConstant("INIT");
-    private static final GdlConstant TERMINAL = GdlPool.getConstant("terminal");
-    private static final GdlConstant BASE = GdlPool.getConstant("base");
-    private static final GdlConstant INPUT = GdlPool.getConstant("input");
     private static final GdlProposition TEMP = GdlPool.getProposition(GdlPool.getConstant("TEMP"));
 
     //TODO: Include a note about the problems with INIT/inits and how to resolve
@@ -200,11 +191,11 @@ public class OptimizingPropNetFactory {
                 if(verbose)
                     System.out.println(" (constant)");
                 //Only add it if it's important
-                if(form.getName().equals(LEGAL)
-                        || form.getName().equals(GOAL)
-                        || form.getName().equals(INIT)
-                        || form.getName().equals(NEXT)
-                        || form.getName().equals(TERMINAL)) {
+                if(form.getName().equals(GdlPool.LEGAL)
+                        || form.getName().equals(GdlPool.GOAL)
+                        || form.getName().equals(GdlPool.INIT)
+                        || form.getName().equals(GdlPool.NEXT)
+                        || form.getName().equals(GdlPool.TERMINAL)) {
                     //Add it
                     for (GdlSentence trueSentence : constantChecker.getTrueSentences(form)) {
                         Proposition trueProp = new Proposition(trueSentence);
@@ -292,7 +283,7 @@ public class OptimizingPropNetFactory {
             if (entry.getValue() == trueComponent
                     && entry.getKey() instanceof GdlRelation) {
                 GdlRelation relation = (GdlRelation) entry.getKey();
-                if (relation.getName() == INIT) {
+                if (relation.getName() == GdlPool.INIT) {
                     GdlTerm trueBase = relation.get(0);
                     GdlFunction withTrue = GdlPool.getFunction(GdlPool.getConstant("true"), Collections.singletonList(trueBase));
                     initiallyTrue.add((Proposition) components.get(withTrue.toSentence()));
@@ -307,7 +298,7 @@ public class OptimizingPropNetFactory {
             Constant falseComponent) throws InterruptedException {
         boolean changedSomething = false;
         for(Entry<GdlSentence, Component> entry : components.entrySet()) {
-            if(entry.getKey().getName() == TRUE) {
+            if(entry.getKey().getName() == GdlPool.TRUE) {
                 Component comp = entry.getValue();
                 if(comp.getInputs().size() == 0) {
                     comp.addInput(falseComponent);
@@ -329,18 +320,18 @@ public class OptimizingPropNetFactory {
             Constant falseComponent) throws InterruptedException {
         Set<GdlSentence> legals = new HashSet<GdlSentence>();
         for (GdlSentence sentence : components.keySet()) {
-            if (sentence.getName() == LEGAL) {
+            if (sentence.getName() == GdlPool.LEGAL) {
                 legals.add(sentence);
             }
         }
         Set<GdlSentence> inputsToRemove = new HashSet<GdlSentence>();
         for (Entry<GdlSentence, Component> entry : components.entrySet()) {
             ConcurrencyUtils.checkForInterruption();
-            if (entry.getKey().getName() == DOES) {
+            if (entry.getKey().getName() == GdlPool.DOES) {
                 //Check if there's a corresponding input prop..
                 //				inputsToRemove.add(entry.getKey());
                 GdlRelation doesSentence = (GdlRelation) entry.getKey();
-                GdlSentence legalSentence = GdlPool.getRelation(LEGAL, doesSentence.getBody());
+                GdlSentence legalSentence = GdlPool.getRelation(GdlPool.LEGAL, doesSentence.getBody());
                 if (!legals.contains(legalSentence)) {
                     inputsToRemove.add(doesSentence);
                 }
@@ -737,8 +728,8 @@ public class OptimizingPropNetFactory {
         Proposition prop = (Proposition) component;
         GdlConstant name = prop.getName().getName();
 
-        return name.equals(LEGAL) /*|| name.equals(NEXT)*/ || name.equals(GOAL)
-                || name.equals(INIT) || name.equals(TERMINAL);
+        return name.equals(GdlPool.LEGAL) || name.equals(GdlPool.GOAL)
+                || name.equals(GdlPool.INIT) || name.equals(GdlPool.TERMINAL);
     }
 
 
@@ -768,9 +759,9 @@ public class OptimizingPropNetFactory {
         for(Entry<GdlSentence, Component> entry : components.entrySet()) {
             GdlSentence sentence = entry.getKey();
 
-            if(sentence.getName().equals(NEXT)) {
+            if(sentence.getName().equals(GdlPool.NEXT)) {
                 //connect to true
-                GdlSentence trueSentence = GdlPool.getRelation(TRUE, sentence.getBody());
+                GdlSentence trueSentence = GdlPool.getRelation(GdlPool.TRUE, sentence.getBody());
                 Component nextComponent = entry.getValue();
                 Component trueComponent = components.get(trueSentence);
                 //There might be no true component (for example, because the bases
@@ -798,9 +789,9 @@ public class OptimizingPropNetFactory {
         for(Entry<GdlSentence, Component> entry : components.entrySet()) {
             //Is this something that will be true?
             if(entry.getValue() == trueComponent) {
-                if(entry.getKey().getName().equals(INIT)) {
+                if(entry.getKey().getName().equals(GdlPool.INIT)) {
                     //Find the corresponding true sentence
-                    GdlSentence trueSentence = GdlPool.getRelation(TRUE, entry.getKey().getBody());
+                    GdlSentence trueSentence = GdlPool.getRelation(GdlPool.TRUE, entry.getKey().getBody());
                     //System.out.println("True sentence from init: " + trueSentence);
                     Component trueSentenceComponent = components.get(trueSentence);
                     if (trueSentenceComponent == null) {
@@ -916,15 +907,15 @@ public class OptimizingPropNetFactory {
                 }
             }
             //Don't add if it's true/next/legal/does and we're waiting for base/input
-            if(usingBase && (curForm.getName().equals(TRUE) || curForm.getName().equals(NEXT) || curForm.getName().equals(INIT))) {
+            if(usingBase && (curForm.getName().equals(GdlPool.TRUE) || curForm.getName().equals(GdlPool.NEXT) || curForm.getName().equals(GdlPool.INIT))) {
                 //Have we added the corresponding base sf yet?
-                SentenceForm baseForm = curForm.withName(BASE);
+                SentenceForm baseForm = curForm.withName(GdlPool.BASE);
                 if(!alreadyOrdered.contains(baseForm)) {
                     readyToAdd = false;
                 }
             }
-            if(usingInput && (curForm.getName().equals(DOES) || curForm.getName().equals(LEGAL))) {
-                SentenceForm inputForm = curForm.withName(INPUT);
+            if(usingInput && (curForm.getName().equals(GdlPool.DOES) || curForm.getName().equals(GdlPool.LEGAL))) {
+                SentenceForm inputForm = curForm.withName(GdlPool.INPUT);
                 if(!alreadyOrdered.contains(inputForm)) {
                     readyToAdd = false;
                 }
@@ -964,9 +955,9 @@ public class OptimizingPropNetFactory {
 
         for(GdlSentence alwaysTrueSentence : alwaysTrueSentences) {
             //We add the sentence as a constant
-            if(alwaysTrueSentence.getName().equals(LEGAL)
-                    || alwaysTrueSentence.getName().equals(NEXT)
-                    || alwaysTrueSentence.getName().equals(GOAL)) {
+            if(alwaysTrueSentence.getName().equals(GdlPool.LEGAL)
+                    || alwaysTrueSentence.getName().equals(GdlPool.NEXT)
+                    || alwaysTrueSentence.getName().equals(GdlPool.GOAL)) {
                 Proposition prop = new Proposition(alwaysTrueSentence);
                 //Attach to true
                 trueComponent.addOutput(prop);
@@ -981,20 +972,20 @@ public class OptimizingPropNetFactory {
         }
 
         //For does/true, make nodes based on input/base, if available
-        if(usingInput && form.getName().equals(DOES)) {
+        if(usingInput && form.getName().equals(GdlPool.DOES)) {
             //Add only those propositions for which there is a corresponding INPUT
-            SentenceForm inputForm = form.withName(INPUT);
+            SentenceForm inputForm = form.withName(GdlPool.INPUT);
             for (GdlSentence inputSentence : constantChecker.getTrueSentences(inputForm)) {
-                GdlSentence doesSentence = GdlPool.getRelation(DOES, inputSentence.getBody());
+                GdlSentence doesSentence = GdlPool.getRelation(GdlPool.DOES, inputSentence.getBody());
                 Proposition prop = new Proposition(doesSentence);
                 components.put(doesSentence, prop);
             }
             return;
         }
-        if(usingBase && form.getName().equals(TRUE)) {
-            SentenceForm baseForm = form.withName(BASE);
+        if(usingBase && form.getName().equals(GdlPool.TRUE)) {
+            SentenceForm baseForm = form.withName(GdlPool.BASE);
             for (GdlSentence baseSentence : constantChecker.getTrueSentences(baseForm)) {
-                GdlSentence trueSentence = GdlPool.getRelation(TRUE, baseSentence.getBody());
+                GdlSentence trueSentence = GdlPool.getRelation(GdlPool.TRUE, baseSentence.getBody());
                 Proposition prop = new Proposition(trueSentence);
                 components.put(trueSentence, prop);
             }
@@ -1192,8 +1183,8 @@ public class OptimizingPropNetFactory {
         //True/does sentences will have none of these rules, but
         //still need to exist/"float"
         //We'll do this if we haven't used base/input as a basis
-        if(form.getName().equals(TRUE)
-                || form.getName().equals(DOES)) {
+        if(form.getName().equals(GdlPool.TRUE)
+                || form.getName().equals(GdlPool.DOES)) {
             for(GdlSentence sentence : model.getDomain(form)) {
                 ConcurrencyUtils.checkForInterruption();
 
@@ -1583,7 +1574,7 @@ public class OptimizingPropNetFactory {
         for(Proposition p : pn.getPropositions()) {
             if(p.getName() instanceof GdlRelation) {
                 GdlRelation relation = (GdlRelation) p.getName();
-                if(relation.getName() == INIT) {
+                if(relation.getName() == GdlPool.INIT) {
                     toRemove.add(p);
                 }
             }
@@ -1613,15 +1604,15 @@ public class OptimizingPropNetFactory {
                 continue;
             GdlSentence sentence = p.getName();
             if (sentence instanceof GdlProposition) {
-                if (sentence.getName() == TERMINAL || sentence.getName() == INIT_CAPS) {
+                if (sentence.getName() == GdlPool.TERMINAL || sentence.getName() == INIT_CAPS) {
                     continue;
                 }
             } else {
                 GdlRelation relation = (GdlRelation) sentence;
                 GdlConstant name = relation.getName();
-                if(name == LEGAL || name == GOAL || name == DOES
-                        || name == INIT
-                        || (keepNexts && name == NEXT))
+                if(name == GdlPool.LEGAL || name == GdlPool.GOAL || name == GdlPool.DOES
+                        || name == GdlPool.INIT
+                        || (keepNexts && name == GdlPool.NEXT))
                     continue;
             }
             if (p.getInputs().size() < 1) {

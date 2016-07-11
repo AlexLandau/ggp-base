@@ -132,7 +132,7 @@ public final class PropNetAnnotatedFlattener
             List<GdlTerm> body = new ArrayList<GdlTerm>(workingSet);
 
             GdlFunction function = GdlPool.getFunction(name, body);
-            results.add(GdlPool.getRule(GdlPool.getRelation(GdlPool.getConstant("true"), new GdlTerm[] { function })));
+            results.add(GdlPool.getRule(GdlPool.getRelation(GdlPool.TRUE, new GdlTerm[] { function })));
         }
         else
         {
@@ -163,9 +163,9 @@ public final class PropNetAnnotatedFlattener
 
             if ( constant.getValue().equals("does") )
             {
-                for ( GdlRule rule : getInstantiations(GdlPool.getConstant("legal")) )
+                for ( GdlRule rule : getInstantiations(GdlPool.LEGAL) )
                 {
-                    GdlSentence head = GdlPool.getRelation(GdlPool.getConstant("does"), rule.getHead().getBody());
+                    GdlSentence head = GdlPool.getRelation(GdlPool.DOES, rule.getHead().getBody());
                     GdlRule equivalentDoesRule = GdlPool.getRule(head);
                     instantiations.get(constant).add(equivalentDoesRule);
                 }
@@ -207,7 +207,7 @@ public final class PropNetAnnotatedFlattener
                     if ( sentence.arity() == 1 )
                     {
                         GdlConstant constant = (GdlConstant) sentence.get(0);
-                        trues.add(GdlPool.getRule(GdlPool.getRelation(GdlPool.getConstant("true"), new GdlTerm[] { constant })));
+                        trues.add(GdlPool.getRule(GdlPool.getRelation(GdlPool.TRUE, new GdlTerm[] { constant })));
                     }
                     else
                     {
@@ -221,7 +221,7 @@ public final class PropNetAnnotatedFlattener
         }
 
         Map<GdlConstant, List<GdlRule>> instantiations = new HashMap<GdlConstant, List<GdlRule>>();
-        instantiations.put(GdlPool.getConstant("true"), trues);
+        instantiations.put(GdlPool.TRUE, trues);
 
         return instantiations;
     }
