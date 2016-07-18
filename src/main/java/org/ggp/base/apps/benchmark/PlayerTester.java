@@ -4,10 +4,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.ggp.base.player.GamePlayer;
 import org.ggp.base.player.GamePlayer.BadPortBehavior;
@@ -82,6 +80,20 @@ public class PlayerTester {
             this.theState = theState;
             this.goodMovesArr = goodMovesArr;
         }
+
+        public boolean isGoodMove(Move move) {
+            String moveName = move.toString();
+            for (String goodMove : goodMovesArr) {
+                if (moveName.equalsIgnoreCase(goodMove)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
+    public static Game getMediasResGame(TestCase testCase) throws SymbolFormatException {
+        return getMediasResGame(testCase.gameKey, testCase.theState);
     }
 
     /**
@@ -90,7 +102,7 @@ public class PlayerTester {
      * it removes all of the "init" rules and substitutes in its own set.
      * @throws SymbolFormatException
      */
-    static Game getMediasResGame(String gameKey, String theState) throws SymbolFormatException {
+    public static Game getMediasResGame(String gameKey, String theState) throws SymbolFormatException {
         StringBuilder newRulesheet = new StringBuilder();
         List<Gdl> theRules = GameRepository.getDefaultRepository().getGame(gameKey).getRules();
         for (Gdl gdl : theRules) {
@@ -167,12 +179,11 @@ public class PlayerTester {
             e.printStackTrace();
         }
 
-        final String theChosenMove = theChosenMoveArr[0].toString().toLowerCase();
-        Set<String> goodMoves = new HashSet<String>(Arrays.asList(theCase.goodMovesArr));
-        boolean passes = goodMoves.contains(theChosenMove);
+        final Move theChosenMove = theChosenMoveArr[0];
+        boolean passes = theCase.isGoodMove(theChosenMove);
 
         if (!passes) {
-            System.out.println("Failure: player chose " + theChosenMove + "; acceptable moves are " + goodMoves);
+            System.out.println("Failure: player chose " + theChosenMove + "; acceptable moves are " + Arrays.toString(theCase.goodMovesArr));
         } else {
             System.out.println("Success: player chose " + theChosenMove + " which is an acceptable move.");
         }
