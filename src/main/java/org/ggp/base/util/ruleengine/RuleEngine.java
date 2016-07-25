@@ -15,7 +15,6 @@ import com.google.common.collect.Lists;
 
 
 //Intended as a replacement for StateMachine.
-//TODO: Remove old exception types? GameDescriptionException?
 public interface RuleEngine<Move, State extends RuleEngineState<Move, State>> {
 
     State getInitialState();

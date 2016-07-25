@@ -431,7 +431,6 @@ public abstract class StateMachine
 
     public abstract MachineState translateState(MachineState state);
 
-    //TODO: Rename this "isNative"; seems to make more sense
     public abstract boolean isNative(MachineState state);
 
     public void getAverageDiscountedScoresFromRepeatedDepthCharges(final MachineState state, final double[] avgScores, final double[] avgDepth, final double discountFactor, final int repetitions) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
