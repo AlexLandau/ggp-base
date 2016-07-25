@@ -16,7 +16,7 @@ public class StdTranslator implements Translator<Move, MachineState> {
     }
 
     @Override
-    public Move getNativeMove(GdlTerm move) {
+    public Move getNativeMove(int roleIndex, GdlTerm move) {
         return new Move(move);
     }
 

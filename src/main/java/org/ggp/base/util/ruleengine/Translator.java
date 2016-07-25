@@ -11,7 +11,7 @@ import com.google.common.collect.Lists;
 
 public interface Translator<M, S> {
     public GdlTerm getGdlMove(M move);
-    public M getNativeMove(GdlTerm move);
+    public M getNativeMove(int roleIndex, GdlTerm move);
 
     public Set<GdlSentence> getGdlState(S state);
     public S getNativeState(Set<GdlSentence> state);
@@ -25,15 +25,17 @@ public interface Translator<M, S> {
     }
     default List<M> getNativeMoves(List<GdlTerm> moves) {
         List<M> results = Lists.newArrayListWithCapacity(moves.size());
-        for (GdlTerm move : moves) {
-            results.add(getNativeMove(move));
+        for (int r = 0; r < moves.size(); r++) {
+            GdlTerm move = moves.get(r);
+            results.add(getNativeMove(r, move));
         }
         return results;
     }
     default List<M> getNativeMovesFromMoves(List<Move> moves) {
         List<M> results = Lists.newArrayListWithCapacity(moves.size());
-        for (Move move : moves) {
-            results.add(getNativeMove(move.getContents()));
+        for (int r = 0; r < moves.size(); r++) {
+            Move move = moves.get(r);
+            results.add(getNativeMove(r, move.getContents()));
         }
         return results;
     }
