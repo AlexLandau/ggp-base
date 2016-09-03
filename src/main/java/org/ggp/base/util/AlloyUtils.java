@@ -83,6 +83,7 @@ public class AlloyUtils {
         return values;
     }
 
+    //TODO: Better source of randomness?
     private static final Random RANDOM = new Random();
     public static <T> T pickOneAtRandom(List<T> list) {
         if (list.size() == 1) {

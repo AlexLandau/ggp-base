@@ -106,6 +106,7 @@ public class ConstantCheckerFactory {
      * In most (but not all) cases, {@link #createWithForwardChaining(SentenceDomainModel)}
      * is more efficient.
      */
+    //TODO: Retest if this is still less efficient after the recent prover improvements...
     public static ImmutableConstantChecker createWithProver(SentenceFormModel model) throws InterruptedException {
         Multimap<SentenceForm, GdlSentence> sentencesByForm = HashMultimap.create();
         addSentencesTrueByRules(sentencesByForm, model);
