@@ -30,6 +30,7 @@ import org.ggp.base.util.gdl.grammar.GdlTerm;
 import org.ggp.base.util.gdl.grammar.GdlVariable;
 import org.ggp.base.util.symbol.factory.exceptions.SymbolFormatException;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -188,6 +189,13 @@ public class GdlUtils {
         if(!fillAssignmentBody(assignment, left.getBody(), right.getBody()))
             return null;
         return assignment;
+    }
+
+    public static @Nullable Map<GdlVariable, GdlConstant> getAssignmentMakingLeftIntoGroundRight(
+            GdlSentence left, GdlSentence right) {
+        Preconditions.checkArgument(right.isGround());
+        Map<GdlVariable, GdlTerm> assignment = getAssignmentMakingLeftIntoRight(left, right);
+        return Maps.transformValues(assignment, term -> (GdlConstant) term);
     }
 
     private static boolean fillAssignmentBody(

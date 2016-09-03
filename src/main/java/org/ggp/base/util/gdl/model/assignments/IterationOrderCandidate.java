@@ -619,7 +619,7 @@ public class IterationOrderCandidate implements Comparable<IterationOrderCandida
             List<Integer> definedIndices, Set<GdlSentence> sentencesForForm) {
         ListMultimap<List<GdlConstant>, List<GdlConstant>> contents = ArrayListMultimap.create();
         for (GdlSentence sentence : sentencesForForm) {
-            @Nullable Map<GdlVariable, GdlConstant> assignment = GdlUtils.getAssignmentMakingLeftIntoRight(sourceConjunct, sentence);
+            @Nullable Map<GdlVariable, GdlConstant> assignment = GdlUtils.getAssignmentMakingLeftIntoGroundRight(sourceConjunct, sentence);
             if (assignment == null) {
                 continue;
             }

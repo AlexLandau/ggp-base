@@ -58,7 +58,7 @@ public class AssignmentsFactory {
         List<Assignments> assignmentsList = new ArrayList<Assignments>();
         for(GdlSentence matchingLiteral : matchingLiterals) {
             //left has the variables, right has the constants
-            Map<GdlVariable, GdlConstant> preassignment = GdlUtils.getAssignmentMakingLeftIntoRight(matchingLiteral, input);
+            Map<GdlVariable, GdlConstant> preassignment = GdlUtils.getAssignmentMakingLeftIntoGroundRight(matchingLiteral, input);
             if(preassignment != null) {
                 Assignments assignments = new AssignmentsImpl(
                         preassignment,

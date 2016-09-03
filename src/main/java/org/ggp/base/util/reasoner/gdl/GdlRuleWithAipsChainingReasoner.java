@@ -13,6 +13,7 @@ import org.ggp.base.util.gdl.grammar.GdlLiteral;
 import org.ggp.base.util.gdl.grammar.GdlNot;
 import org.ggp.base.util.gdl.grammar.GdlOr;
 import org.ggp.base.util.gdl.grammar.GdlSentence;
+import org.ggp.base.util.gdl.grammar.GdlTerm;
 import org.ggp.base.util.gdl.grammar.GdlVariable;
 import org.ggp.base.util.gdl.model.SentenceDomainModel;
 import org.ggp.base.util.gdl.model.SentenceForm;
@@ -194,7 +195,7 @@ DifferentialForwardChainingReasoner<GdlRuleWithAIPs, GdlSentenceSet> {
         //		Map<SentenceForm, ? extends Collection<GdlSentence>> completedSentenceFormValues = allSentences.getSentences().asMap();
 
         for (GdlSentence chosenNewSentence : chosenNewSentences) {
-            Map<GdlVariable, GdlConstant> preassignments = GdlUtils.getAssignmentMakingLeftIntoRight(chosenLiteral, chosenNewSentence);
+            Map<GdlVariable, GdlTerm> preassignments = GdlUtils.getAssignmentMakingLeftIntoRight(chosenLiteral, chosenNewSentence);
             if (preassignments != null) {
                 //TODO: Pick an AIP based on which literal we're using
                 //TODO: Could this be a head literal?

@@ -200,7 +200,7 @@ public class GdlChainingReasoner implements
         Map<SentenceForm, ? extends Collection<GdlSentence>> completedSentenceFormValues = allSentences.getSentences().asMap();
 
         for (GdlSentence chosenNewSentence : chosenNewSentences) {
-            Map<GdlVariable, GdlConstant> preassignments = GdlUtils.getAssignmentMakingLeftIntoRight(chosenLiteral, chosenNewSentence);
+            Map<GdlVariable, GdlConstant> preassignments = GdlUtils.getAssignmentMakingLeftIntoGroundRight(chosenLiteral, chosenNewSentence);
             if (preassignments != null) {
                 //TODO: Use an AIP instead? These next two lines take most of our time
                 Assignments assignments = new AssignmentsImpl(preassignments, rule, varDomains, functionInfoMap, completedSentenceFormValues);

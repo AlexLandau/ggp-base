@@ -198,7 +198,7 @@ public class AssignmentsImpl implements Assignments {
             byTuple: for(GdlSentence sentence : sentences) {
                 //Check that it doesn't conflict with our headAssignment
                 if (!headAssignment.isEmpty()) {
-                    Map<GdlVariable, GdlConstant> tupleAssignment = GdlUtils.getAssignmentMakingLeftIntoRight(sourceConjunct, sentence);
+                    Map<GdlVariable, GdlConstant> tupleAssignment = GdlUtils.getAssignmentMakingLeftIntoGroundRight(sourceConjunct, sentence);
                     for (GdlVariable var : headAssignment.keySet()) {
                         if (tupleAssignment.containsKey(var)
                                 && tupleAssignment.get(var) != headAssignment.get(var)) {
