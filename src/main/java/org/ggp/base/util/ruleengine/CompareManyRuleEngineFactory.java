@@ -67,4 +67,8 @@ public class CompareManyRuleEngineFactory implements RuleEngineFactory<RuleEngin
         List<RuleEngineFactory<? extends RuleEngine<?, ?>>> engines = Lists.asList(firstEngine, otherEngines);
         return new CompareManyRuleEngineFactory(ImmutableList.copyOf(engines));
     }
+
+    public static RuleEngineFactory<?> create(Iterable<RuleEngineFactory<?>> engines) {
+        return new CompareManyRuleEngineFactory(ImmutableList.copyOf(engines));
+    }
 }
