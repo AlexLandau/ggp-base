@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +31,7 @@ import org.ggp.base.util.gdl.grammar.GdlVariable;
 import org.ggp.base.util.symbol.factory.exceptions.SymbolFormatException;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 public class GdlUtils {
@@ -171,10 +171,14 @@ public class GdlUtils {
 
     /**
      * Returns null if no assignment is possible.
+     *
+     * <p>Occasionally useful factoid: If this returns a non-null value, then if the sentence
+     * represented by right is satisfiable (when variables are completely unbound) then the
+     * sentence on the left is satisfiable (when variables are completely unbound).
      */
-    public static @Nullable Map<GdlVariable, GdlConstant> getAssignmentMakingLeftIntoRight(
+    public static @Nullable Map<GdlVariable, GdlTerm> getAssignmentMakingLeftIntoRight(
             GdlSentence left, GdlSentence right) {
-        Map<GdlVariable, GdlConstant> assignment = new HashMap<GdlVariable, GdlConstant>();
+        Map<GdlVariable, GdlTerm> assignment = Maps.newHashMap();
         if(!left.getName().equals(right.getName()))
             return null;
         if(left.arity() != right.arity())
@@ -187,39 +191,41 @@ public class GdlUtils {
     }
 
     private static boolean fillAssignmentBody(
-            Map<GdlVariable, GdlConstant> assignment, List<GdlTerm> leftBody,
+            Map<GdlVariable, GdlTerm> assignment, List<GdlTerm> leftBody,
             List<GdlTerm> rightBody) {
-        //left body contains variables; right body shouldn't
-        if(leftBody.size() != rightBody.size()) {
+        if (leftBody.size() != rightBody.size()) {
             return false;
         }
-        for(int i = 0; i < leftBody.size(); i++) {
+        for (int i = 0; i < leftBody.size(); i++) {
             GdlTerm leftTerm = leftBody.get(i);
             GdlTerm rightTerm = rightBody.get(i);
-            if(leftTerm instanceof GdlConstant) {
-                if(!leftTerm.equals(rightTerm)) {
+            if (leftTerm instanceof GdlConstant) {
+                if (!leftTerm.equals(rightTerm)) {
                     return false;
                 }
-            } else if(leftTerm instanceof GdlVariable) {
-                if(assignment.containsKey(leftTerm)) {
-                    if(!assignment.get(leftTerm).equals(rightTerm)) {
+            } else if (leftTerm instanceof GdlVariable) {
+                if (assignment.containsKey(leftTerm)) {
+                    if (!assignment.get(leftTerm).equals(rightTerm)) {
                         return false;
                     }
                 } else {
-                    if(!(rightTerm instanceof GdlConstant)) {
-                        return false;
-                    }
-                    assignment.put((GdlVariable)leftTerm, (GdlConstant)rightTerm);
+                    assignment.put((GdlVariable) leftTerm, rightTerm);
                 }
             } else if(leftTerm instanceof GdlFunction) {
-                if(!(rightTerm instanceof GdlFunction))
+                if (!(rightTerm instanceof GdlFunction)) {
                     return false;
+                }
                 GdlFunction leftFunction = (GdlFunction) leftTerm;
                 GdlFunction rightFunction = (GdlFunction) rightTerm;
-                if(!leftFunction.getName().equals(rightFunction.getName()))
+                if (!leftFunction.getName().equals(rightFunction.getName())) {
                     return false;
-                if(!fillAssignmentBody(assignment, leftFunction.getBody(), rightFunction.getBody()))
+                }
+                if (leftFunction.arity() != rightFunction.arity()) {
                     return false;
+                }
+                if (!fillAssignmentBody(assignment, leftFunction.getBody(), rightFunction.getBody())) {
+                    return false;
+                }
             }
         }
         return true;
