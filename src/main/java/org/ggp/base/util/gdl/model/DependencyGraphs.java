@@ -100,7 +100,7 @@ public class DependencyGraphs {
      * its associated values.
      */
     public static <T> List<Set<T>> toposortSafe(
-            Set<T> allElements,
+            Set<? extends T> allElements,
             Multimap<T, T> dependencyGraph) throws InterruptedException {
         Set<Set<T>> strataToAdd = createAllStrata(allElements);
         SetMultimap<Set<T>, Set<T>> strataDependencyGraph = createStrataDependencyGraph(dependencyGraph);
@@ -182,7 +182,7 @@ public class DependencyGraphs {
         }
     }
 
-    private static <T> Set<Set<T>> createAllStrata(Set<T> allElements) {
+    private static <T> Set<Set<T>> createAllStrata(Set<? extends T> allElements) {
         Set<Set<T>> result = Sets.newHashSet();
         for (T element : allElements) {
             result.add(ImmutableSet.of(element));

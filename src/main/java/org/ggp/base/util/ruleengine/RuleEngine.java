@@ -96,6 +96,15 @@ public interface RuleEngine<Move, State extends RuleEngineState<Move, State>> {
         return getNextState(state, jointMove);
     }
 
+    /**
+     * Marks a state as being a "base" state that will often be used as a source of
+     * playouts or future states. This is useful for e.g. a new root node of a game
+     * tree.
+     */
+    default void markAsBaseState(State state) {
+        // Do nothing by default
+    }
+
 //    default DepthChargeBatchResult performDepthChargeBatch(State state)
 //            throws GameDescriptionException {
 //        ImmutableIntArray result = doRandomPlayout(state);
