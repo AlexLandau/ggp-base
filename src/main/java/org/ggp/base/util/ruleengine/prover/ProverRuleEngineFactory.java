@@ -3,6 +3,7 @@ package org.ggp.base.util.ruleengine.prover;
 import java.util.List;
 
 import org.ggp.base.util.gdl.grammar.Gdl;
+import org.ggp.base.util.gdl.transforms.DistinctAndNotMover2;
 import org.ggp.base.util.ruleengine.RuleEngineFactory;
 
 public class ProverRuleEngineFactory implements RuleEngineFactory<ProverRuleEngine> {
@@ -16,19 +17,15 @@ public class ProverRuleEngineFactory implements RuleEngineFactory<ProverRuleEngi
         return new ProverRuleEngineFactory(false);
     }
 
-    public static ProverRuleEngineFactory createExperimental() {
+    public static ProverRuleEngineFactory createWithDisjuncts() {
         return new ProverRuleEngineFactory(true);
     }
 
-    //	@Override
-    //	public ProverRuleEngine buildInitializedForRules(List<Gdl> rules) {
-    //		ProverRuleEngine sm = new ProverRuleEngine(experimental);
-    //		sm.initialize(rules);
-    //		return sm;
-    //	}
-
     @Override
     public ProverRuleEngine buildEngineForRules(List<Gdl> rules) {
+        if (experimental) {
+            rules = DistinctAndNotMover2.run(rules);
+        }
         return ProverRuleEngine.create(rules, experimental);
     }
 }

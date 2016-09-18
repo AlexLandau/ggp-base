@@ -13,7 +13,6 @@ import org.ggp.base.util.gdl.grammar.GdlSentence;
 import org.ggp.base.util.logging.GamerLogger;
 import org.ggp.base.util.prover.Prover;
 import org.ggp.base.util.prover.aima.AimaProver;
-import org.ggp.base.util.prover.logging.LoggingAimaProver;
 import org.ggp.base.util.prover.logging.StandardProverLogger;
 import org.ggp.base.util.ruleengine.GameDescriptionException;
 import org.ggp.base.util.ruleengine.RuleEngine;
@@ -45,20 +44,22 @@ public class ProverRuleEngine implements RuleEngine<Move, MachineState>
         this.log = log;
     }
 
-    public static ProverRuleEngine create(List<Gdl> description, boolean experimental)
+    public static ProverRuleEngine create(List<Gdl> description, boolean noPreprocessing)
     {
         Prover prover;
         StandardProverLogger log;
-        if (experimental) {
-            log = StandardProverLogger.create();
-            prover = new LoggingAimaProver(description, log);
+        if (noPreprocessing) {
+//            log = StandardProverLogger.create();
+//            prover = new LoggingAimaProver(description, log);
+            log = null;
+            prover = AimaProver.createWithoutPreprocessing(description);
         } else {
             log = null;
-            prover = new AimaProver(description);
+            prover = AimaProver.create(description);
         }
         ImmutableList<Role> roles = ImmutableList.copyOf(Role.computeRoles(description));
         MachineState initialState = computeInitialState(prover);
-        return new ProverRuleEngine(experimental, initialState, prover, roles, log);
+        return new ProverRuleEngine(noPreprocessing, initialState, prover, roles, log);
     }
 
     private static MachineState computeInitialState(Prover prover)

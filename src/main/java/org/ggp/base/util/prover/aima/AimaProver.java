@@ -40,10 +40,25 @@ public final class AimaProver implements Prover
 
     private final ProverCache fixedAnswerCache = ProverCache.createMultiThreadedCache();
 
-    public AimaProver(List<Gdl> description)
-    {
+    private AimaProver(List<Gdl> description) {
+        this.knowledgeBase = new KnowledgeBase(Sets.newHashSet(description));
+    }
+
+    /**
+     * This is how AimaProvers should usually be constructed.
+     */
+    public static AimaProver create(List<Gdl> description) {
         description = DistinctAndNotMover.run(description);
-        knowledgeBase = new KnowledgeBase(Sets.newHashSet(description));
+        return new AimaProver(description);
+    }
+
+    /**
+     * This can be used to create an AimaProver with no automatic GDL pre-processing.
+     * You should generally only use this if you intend to do GDL pre-processing
+     * yourself.
+     */
+    public static AimaProver createWithoutPreprocessing(List<Gdl> description) {
+        return new AimaProver(description);
     }
 
     private Set<GdlSentence> ask(GdlSentence query, Set<GdlSentence> context, boolean askOne)

@@ -40,7 +40,7 @@ public class BasesInputsValidator implements GameValidator {
             StateMachine sm = new ProverStateMachine();
             sm.initialize(theGame.getRules());
 
-            AimaProver prover = new AimaProver(theGame.getRules());
+            AimaProver prover = AimaProver.create(theGame.getRules());
             GdlSentence basesQuery = GdlPool.getRelation(GdlPool.BASE, new GdlTerm[] {X});
             Set<GdlSentence> bases = prover.askAll(basesQuery, Collections.<GdlSentence>emptySet());
             GdlSentence inputsQuery = GdlPool.getRelation(GdlPool.INPUT, new GdlTerm[] {X, Y});

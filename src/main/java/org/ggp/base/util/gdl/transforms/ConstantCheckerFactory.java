@@ -116,7 +116,7 @@ public class ConstantCheckerFactory {
     private static void addSentencesTrueByRules(
             Multimap<SentenceForm, GdlSentence> sentencesByForm,
             SentenceFormModel model) throws InterruptedException {
-        AimaProver prover = new AimaProver(model.getDescription());
+        AimaProver prover = AimaProver.create(model.getDescription());
         for (SentenceForm form : model.getConstantSentenceForms()) {
             GdlSentence query = form.getSentenceFromTuple(getVariablesTuple(form.getTupleSize()));
             for (GdlSentence result : prover.askAll(query, ImmutableSet.<GdlSentence>of())) {

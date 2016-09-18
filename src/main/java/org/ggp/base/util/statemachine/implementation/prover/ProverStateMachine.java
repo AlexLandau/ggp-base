@@ -58,7 +58,7 @@ public class ProverStateMachine extends StateMachine
             this.log = StandardProverLogger.create();
             prover = new LoggingAimaProver(description, log);
         } else {
-            prover = new AimaProver(description);
+            prover = AimaProver.create(description);
         }
         roles = ImmutableList.copyOf(Role.computeRoles(description));
         initialState = computeInitialState();
