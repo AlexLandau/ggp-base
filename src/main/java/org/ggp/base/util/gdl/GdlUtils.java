@@ -195,7 +195,11 @@ public class GdlUtils {
             GdlSentence left, GdlSentence right) {
         Preconditions.checkArgument(right.isGround());
         Map<GdlVariable, GdlTerm> assignment = getAssignmentMakingLeftIntoRight(left, right);
-        return Maps.transformValues(assignment, term -> (GdlConstant) term);
+        if (assignment == null) {
+            return null;
+        } else {
+            return Maps.transformValues(assignment, term -> (GdlConstant) term);
+        }
     }
 
     private static boolean fillAssignmentBody(
