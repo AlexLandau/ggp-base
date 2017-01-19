@@ -99,13 +99,11 @@ public final class GdlPool
         propositionPool.clear();
         relationPool.clear();
         rulePool.clear();
-        //Don't drain the variablePool because we don't want to
-        //keep assigning new IDs for the same variables.
-        //	    variablePool.clear();
-        //	    synchronized (variableCases) {
-        //	    	variableCases.clear();
-        //	    }
-        //
+        variablePool.clear();
+        synchronized (variableCases) {
+            variableCases.clear();
+        }
+
         //	    // When draining the pool between matches, we still need to preserve the keywords
         //	    // since there are global references to them. For example, the Prover state machine
         //	    // has a reference to the GdlConstant "true", and that reference must still point
