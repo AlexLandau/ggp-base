@@ -1,0 +1,43 @@
+; This tests some complex situations around functions being
+; assigned to variables.
+
+(role player)
+
+(goal player 100)
+
+(<= (foo1 ?x (bar ?y z))
+    (p1 ?x)
+    (p2 ?y))
+
+(p1 (bar n z))
+(p2 n)
+
+(<= (legal player good1)
+    (foo1 ?x ?x))
+(<= (legal player good2)
+    (foo1 (bar n z) ?x))
+(<= (legal player good3)
+    (foo1 ?x (bar ?y ?z)))
+(<= (legal player good4)
+    (foo1 ?x (bar ?y z)))
+(<= (legal player good5)
+    (foo1 ?x (bar n ?z)))
+(<= (legal player good6)
+    (foo1 ?x (bar n z)))
+(<= (legal player good7)
+    (foo1 (bar ?y z) ?x))
+(<= (legal player good8)
+    (foo1 (bar ?y ?z) ?x))
+(<= (legal player good9)
+    (foo1 (bar n z) (bar n z)))
+
+(<= (legal player bad1)
+    (foo1 (bar ?x z) ?x))
+(<= (legal player bad2)
+    (foo1 (bar ?y ?y) ?x))
+(<= (legal player bad3)
+    (foo1 ?x (bar ?y ?y)))
+
+(next done)
+(<= terminal
+    (true done))

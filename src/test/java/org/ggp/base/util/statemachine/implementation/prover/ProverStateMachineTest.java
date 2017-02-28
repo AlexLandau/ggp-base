@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import org.ggp.base.util.game.TestGameRepository;
 import org.ggp.base.util.gdl.grammar.Gdl;
@@ -17,6 +18,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 
 public class ProverStateMachineTest extends Assert {
 
@@ -204,6 +206,20 @@ public class ProverStateMachineTest extends Assert {
         assertTrue(sm.isTerminal(state));
         assertEquals(100, sm.getGoal(state, you));
         assertEquals(Collections.singletonList(100), sm.getGoals(state));
+    }
+
+    @Test
+    public void testFunctionValuedVariables1() throws Exception {
+        List<Gdl> desc = new TestGameRepository().getGame("test_fvv_1").getRules();
+        sm.initialize(desc);
+        MachineState state = sm.getInitialState();
+        Role role = Role.create("player");
+        Set<Move> legalMoves = Sets.newHashSet(sm.getLegalMoves(state, role));
+        Set<Move> expectedLegalMoves = Sets.newHashSet();
+        for (int i = 1; i <= 9; i++) {
+            expectedLegalMoves.add(Move.create("good" + i));
+        }
+        assertEquals(expectedLegalMoves, legalMoves);
     }
 
     protected Move move(String description) {
