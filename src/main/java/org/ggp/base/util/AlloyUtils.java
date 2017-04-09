@@ -86,12 +86,16 @@ public class AlloyUtils {
     //TODO: Better source of randomness?
     private static final Random RANDOM = new Random();
     public static <T> T pickOneAtRandom(List<T> list) {
+        return pickOneAtRandom(list, RANDOM);
+    }
+
+    public static <T> T pickOneAtRandom(List<T> list, Random random) {
         if (list.size() == 1) {
             return list.get(0);
         } else if (list.size() == 0) {
             throw new IllegalArgumentException("List must have at least one element");
         } else {
-            int index = RANDOM.nextInt(list.size());
+            int index = random.nextInt(list.size());
             return list.get(index);
         }
     }
