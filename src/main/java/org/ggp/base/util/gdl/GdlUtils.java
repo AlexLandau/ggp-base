@@ -28,6 +28,7 @@ import org.ggp.base.util.gdl.grammar.GdlRule;
 import org.ggp.base.util.gdl.grammar.GdlSentence;
 import org.ggp.base.util.gdl.grammar.GdlTerm;
 import org.ggp.base.util.gdl.grammar.GdlVariable;
+import org.ggp.base.util.prover.aima.unifier.Unifier;
 import org.ggp.base.util.symbol.factory.exceptions.SymbolFormatException;
 
 import com.google.common.base.Preconditions;
@@ -259,6 +260,72 @@ public class GdlUtils {
             }
         }
         return false;
+    }
+
+    /**
+     * Returns null if no assignment is possible.
+     *
+     * <p>This is effectively the same as the {@link Unifier} used by the AimaProver.
+     */
+    public static @Nullable Map<GdlVariable, GdlTerm> getUnifyingAssignment(GdlSentence x, GdlSentence y) {
+        Map<GdlVariable, GdlTerm> assignment = Maps.newHashMap();
+        // TODO: Replace toTerm calls with unifySentence
+        boolean isGood = unifyTerm(x.toTerm(), y.toTerm(), assignment);
+
+        if (isGood) {
+            return assignment;
+        } else {
+            return null;
+        }
+    }
+
+    private static boolean unifyTerm(GdlTerm x, GdlTerm y, Map<GdlVariable, GdlTerm> assignment) {
+        if (x == y) {
+            return true;
+        }
+
+        if ((x instanceof GdlConstant) && (y instanceof GdlConstant)) {
+            if (x != y) {
+                return false;
+            }
+        } else if (x instanceof GdlVariable) {
+            if (!unifyVariable((GdlVariable) x, y, assignment)) {
+                return false;
+            }
+        } else if (y instanceof GdlVariable) {
+            if (!unifyVariable((GdlVariable) y, x, assignment)) {
+                return false;
+            }
+        } else if ((x instanceof GdlFunction) && (y instanceof GdlFunction)) {
+            GdlFunction xFunction = (GdlFunction) x;
+            GdlFunction yFunction = (GdlFunction) y;
+
+            if (xFunction.getName() != yFunction.getName()
+                    || xFunction.arity() != yFunction.arity()) {
+                return false;
+            }
+
+            for (int i = 0; i < xFunction.arity(); i++) {
+                if (! unifyTerm(xFunction.get(i), yFunction.get(i), assignment)) {
+                    return false;
+                }
+            }
+        } else {
+            return false;
+        }
+
+        return true;
+    }
+
+    private static boolean unifyVariable(GdlVariable var, GdlTerm x, Map<GdlVariable, GdlTerm> assignment) {
+        if (assignment.containsKey(var)) {
+            return unifyTerm(assignment.get(var), x, assignment);
+        } else if ((x instanceof GdlVariable) && assignment.containsKey((GdlVariable) x)) {
+            return unifyTerm(var, assignment.get((GdlVariable) x), assignment);
+        } else {
+            assignment.put(var, x);
+            return true;
+        }
     }
 
     public static GdlSentence toSentence(String string) {
