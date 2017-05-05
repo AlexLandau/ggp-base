@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -36,15 +35,6 @@ public final class GdlPool
     private static final ConcurrentMap<GdlConstant, ConcurrentMap<List<GdlTerm>, GdlRelation>> relationPool = new ConcurrentHashMap<GdlConstant, ConcurrentMap<List<GdlTerm>, GdlRelation>>();
     private static final ConcurrentMap<GdlSentence, ConcurrentMap<List<GdlLiteral>, GdlRule>> rulePool = new ConcurrentHashMap<GdlSentence, ConcurrentMap<List<GdlLiteral>, GdlRule>>();
     private static final ConcurrentMap<String, GdlVariable> variablePool = new ConcurrentHashMap<String, GdlVariable>();
-
-    //Constant IDs are even, variable IDs are odd
-    private static final AtomicInteger nextVariableId = new AtomicInteger(1);
-    private static final AtomicInteger nextConstantId = new AtomicInteger(2);
-    private static final List<GdlTerm> termsById = new ArrayList<GdlTerm>();
-
-    public static boolean isVariableId(int id) {
-        return ((id % 2) != 0);
-    }
 
     private static final ConcurrentMap<String, GdlConstant> constantPool = new ConcurrentHashMap<String, GdlConstant>();
     //Access to constantCases and variableCases should be synchronized using their monitor locks.
@@ -138,36 +128,9 @@ public final class GdlPool
     private static <K,V> V addToPool(K key, V value, ConcurrentMap<K, V> pool) {
         V prevValue = pool.putIfAbsent(key, value);
         if (prevValue == null) {
-            if (value instanceof GdlTerm) {
-                addToTermsById((GdlTerm)value);
-            }
             return value;
         } else {
             return prevValue;
-        }
-    }
-
-    private static void addToTermsById(GdlTerm value) {
-        int id;
-        if (value instanceof GdlConstant) {
-            id = ((GdlConstant) value).getId();
-        } else if (value instanceof GdlVariable) {
-            id = ((GdlVariable) value).getId();
-        } else {
-            return;
-        }
-        synchronized (termsById) {
-            int size = termsById.size();
-            if (id < size) {
-                termsById.set(id, value);
-            } else if (id == size) {
-                termsById.add(value);
-            } else { // id > size
-                while (id > termsById.size()) {
-                    termsById.add(null);
-                }
-                termsById.add(value);
-            }
         }
     }
 
@@ -188,7 +151,7 @@ public final class GdlPool
 
         GdlConstant ret = constantPool.get(value);
         if(ret == null)
-            ret = addToPool(value, new GdlConstant(value, nextConstantId.getAndAdd(2)), constantPool);
+            ret = addToPool(value, new GdlConstant(value), constantPool);
 
         return ret;
     }
@@ -207,7 +170,7 @@ public final class GdlPool
 
         GdlVariable ret = variablePool.get(name);
         if(ret == null)
-            ret = addToPool(name, new GdlVariable(name, nextVariableId.getAndAdd(2)), variablePool);
+            ret = addToPool(name, new GdlVariable(name), variablePool);
         return ret;
     }
 
@@ -340,16 +303,6 @@ public final class GdlPool
         }
 
         return ret;
-    }
-
-    public static GdlTerm getTermById(int id) {
-        synchronized (termsById) {
-            GdlTerm result = termsById.get(id);
-            if (result == null) {
-                throw new RuntimeException("Term with id " + id + " not found");
-            }
-            return result;
-        }
     }
 
     /**

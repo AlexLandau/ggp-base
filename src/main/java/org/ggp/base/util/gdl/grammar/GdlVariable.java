@@ -5,22 +5,15 @@ public final class GdlVariable extends GdlTerm
     private static final long serialVersionUID = 1L;
 
     private final String name;
-    private final transient int id;
 
-    GdlVariable(String name, int id)
+    GdlVariable(String name)
     {
         this.name = name.intern();
-        this.id = id;
     }
 
     public String getName()
     {
         return name;
-    }
-
-    public int getId()
-    {
-        return id;
     }
 
     @Override

@@ -5,22 +5,15 @@ public final class GdlConstant extends GdlTerm
     private static final long serialVersionUID = 1L;
 
     private final String value;
-    private final transient int id;
 
-    GdlConstant(String value, int id)
+    GdlConstant(String value)
     {
         this.value = value.intern();
-        this.id = id;
     }
 
     public String getValue()
     {
         return value;
-    }
-
-    public int getId()
-    {
-        return id;
     }
 
     @Override
