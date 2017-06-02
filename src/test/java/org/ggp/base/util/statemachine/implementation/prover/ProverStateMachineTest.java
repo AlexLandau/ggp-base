@@ -181,7 +181,7 @@ public class ProverStateMachineTest extends Assert {
         MachineState state = sm.getInitialState();
         Role robot = new Role(GdlPool.getConstant("robot"));
         assertFalse(sm.isTerminal(state));
-        System.out.println(sm.getLegalMoves(state, robot));
+
         assertEquals(7, sm.getLegalMoves(state, robot).size());
         assertEquals(ImmutableSet.of(
                 move("reduce a 0"),
@@ -191,6 +191,25 @@ public class ProverStateMachineTest extends Assert {
                 move("reduce c 2"),
                 move("reduce c 3"),
                 move("reduce c 4")),
+                ImmutableSet.copyOf(sm.getLegalMoves(state, robot)));
+    }
+
+    @Test
+    public void testCase5F() throws Exception {
+        List<Gdl> desc = new TestGameRepository().getGame("test_case_5f").getRules();
+        sm.initialize(desc);
+        MachineState state = sm.getInitialState();
+        Role robot = new Role(GdlPool.getConstant("robot"));
+        assertFalse(sm.isTerminal(state));
+        assertEquals(7, sm.getLegalMoves(state, robot).size());
+        assertEquals(ImmutableSet.of(
+                move("move 2 2"),
+                move("move 3 2"),
+                move("move 4 2"),
+                move("move 5 2"),
+                move("move 4 3"),
+                move("move 5 3"),
+                move("move 5 4")),
                 ImmutableSet.copyOf(sm.getLegalMoves(state, robot)));
     }
 
