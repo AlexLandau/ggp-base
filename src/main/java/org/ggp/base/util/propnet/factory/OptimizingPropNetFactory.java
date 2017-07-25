@@ -329,7 +329,7 @@ public class OptimizingPropNetFactory {
             ConcurrencyUtils.checkForInterruption();
             if (entry.getKey().getName() == GdlPool.DOES) {
                 //Check if there's a corresponding input prop..
-                //				inputsToRemove.add(entry.getKey());
+                // inputsToRemove.add(entry.getKey());
                 GdlRelation doesSentence = (GdlRelation) entry.getKey();
                 GdlSentence legalSentence = GdlPool.getRelation(GdlPool.LEGAL, doesSentence.getBody());
                 if (!legals.contains(legalSentence)) {

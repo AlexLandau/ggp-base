@@ -202,7 +202,7 @@ public final class GdlPool
     {
         ConcurrentMap<List<GdlTerm>, GdlFunction> bucket = functionPool.get(name);
         if(bucket == null) {
-            ConcurrentMap<List<GdlTerm>, GdlFunction> newMap = new MapMaker().softValues().makeMap();
+            ConcurrentMap<List<GdlTerm>, GdlFunction> newMap = new MapMaker().weakValues().makeMap();
             bucket = addToPool(name, newMap, functionPool);
         }
 
@@ -264,7 +264,7 @@ public final class GdlPool
     {
         ConcurrentMap<List<GdlTerm>, GdlRelation> bucket = relationPool.get(name);
         if(bucket == null) {
-            ConcurrentMap<List<GdlTerm>, GdlRelation> newMap = new MapMaker().softValues().makeMap();
+            ConcurrentMap<List<GdlTerm>, GdlRelation> newMap = new MapMaker().weakValues().makeMap();
             bucket = addToPool(name, newMap, relationPool);
         }
 
@@ -292,7 +292,7 @@ public final class GdlPool
     {
         ConcurrentMap<List<GdlLiteral>, GdlRule> bucket = rulePool.get(head);
         if (bucket == null) {
-            ConcurrentMap<List<GdlLiteral>, GdlRule> newMap = new MapMaker().softValues().makeMap();
+            ConcurrentMap<List<GdlLiteral>, GdlRule> newMap = new MapMaker().weakValues().makeMap();
             bucket = addToPool(head, newMap, rulePool);
         }
 

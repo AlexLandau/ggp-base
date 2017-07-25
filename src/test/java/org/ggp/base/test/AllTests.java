@@ -40,7 +40,7 @@ import org.junit.runners.Suite;
     SignableJSONTest.class,
     SimpleSentenceFormTest.class,
     StaticValidationTest.class,
-    //	TiltyardRequestFarmTest.class, //Takes too long
+    //TiltyardRequestFarmTest.class, //Takes too long
 })
 public class AllTests {
 

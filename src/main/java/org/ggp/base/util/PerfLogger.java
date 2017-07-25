@@ -33,7 +33,7 @@ public class PerfLogger {
 
         private PerfToken(Perf category) {
             this.category = category;
-            this.watch = new Stopwatch().start();
+            this.watch = Stopwatch.createStarted();
         }
 
         @Override

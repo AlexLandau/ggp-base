@@ -6,7 +6,7 @@ import org.ggp.base.apps.kiosk.GameCanvas;
 import org.ggp.base.player.gamer.Gamer;
 import org.reflections.Reflections;
 
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
@@ -62,7 +62,7 @@ public class ProjectSearcher {
 
         @Override
         public String toString() {
-            return Objects.toStringHelper(this)
+            return MoreObjects.toStringHelper(this)
                     .add("allClasses", allClasses)
                     .add("interfaceClass", interfaceClass)
                     .add("concreteClasses", concreteClasses)
