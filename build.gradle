@@ -12,8 +12,7 @@ repositories {
 }
 
 dependencies {
-    compile 'com.google.code.findbugs:jsr305:3.0.0'
-    compile 'com.google.guava:guava:14.0.1'
+    compile 'com.google.guava:guava:22.0'
     compile 'net.alloyggp:escape-rope:0.0.4'
     compile 'net.alloyggp:gdl-validation:0.2.2'
     compile 'net.sf.saxon:Saxon-HE:9.5.1-8'
