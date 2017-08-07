@@ -3,6 +3,8 @@ Note: This is a fork of GGP-Base with some tweaks to support Alloy specifically.
 This stuff used to live in the Alloy repo itself. I'm hoping this approach will
 be easier to keep in sync with the GGP-Base repo.
 
+The contents of the "sancho" packages were copied from sanchoggp/ggp-base.
+
 =====================================
 = GENERAL GAME PLAYING BASE PACKAGE =
 =====================================

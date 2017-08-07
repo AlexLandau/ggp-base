@@ -12,6 +12,12 @@ repositories {
 }
 
 dependencies {
+
+    // Used by the Sancho engine, just for OpenBitSet, I believe
+    compile 'org.apache.lucene:lucene-core:4.8.1'
+    // Used by the Sancho engine
+    compile 'commons-configuration:commons-configuration:1.10'
+
     compile 'com.google.guava:guava:22.0'
     compile 'net.alloyggp:escape-rope:0.0.4'
     compile 'net.alloyggp:gdl-validation:0.2.2'
