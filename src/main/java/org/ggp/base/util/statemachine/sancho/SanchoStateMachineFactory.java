@@ -7,6 +7,11 @@ import org.ggp.base.util.statemachine.StateMachineFactory;
 
 public class SanchoStateMachineFactory implements StateMachineFactory<ForwardDeadReckonPropnetStateMachine> {
     public static final String VERSION = "2017.08.06";
+    public static final SanchoStateMachineFactory INSTANCE = new SanchoStateMachineFactory();
+
+    private SanchoStateMachineFactory() {
+        // Singleton
+    }
 
     @Override
     public ForwardDeadReckonPropnetStateMachine buildInitializedForRules(List<Gdl> rules) {
