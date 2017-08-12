@@ -25,7 +25,7 @@ public class FactorAnalyser
 {
 //  private static final Logger LOGGER = LogManager.getLogger();
 
-  private ForwardDeadReckonPropnetStateMachine mStateMachine;
+  private ForwardDeadReckonPropnetRuleEngine mStateMachine;
 
   //  We don't accept more than a reasonable smallish number of factors since
   //  1) The way we instantiate search trees for each only scales modestly
@@ -100,7 +100,7 @@ public class FactorAnalyser
     }
   }
 
-  public FactorAnalyser(ForwardDeadReckonPropnetStateMachine stateMachine)
+  public FactorAnalyser(ForwardDeadReckonPropnetRuleEngine stateMachine)
   {
     this.mStateMachine = stateMachine;
     mBasePropositions = stateMachine.getFullPropNet().getBasePropositions().values();

@@ -54,13 +54,13 @@ import org.ggp.base.util.statemachine.sancho.FactorAnalyser.FactorInfo;
  *
  * This class is not thread-safe.  Each instance must be accessed by a single thread.
  */
-public class ForwardDeadReckonPropnetStateMachine extends StateMachine
+public class ForwardDeadReckonPropnetRuleEngine extends StateMachine
 {
 //  private static final Logger LOGGER = LogManager.getLogger();
 
   /** The underlying proposition network - in various optimised forms. */
 
-  private final ForwardDeadReckonPropnetStateMachine                   mMaster;
+  private final ForwardDeadReckonPropnetRuleEngine                   mMaster;
 
   // The complete propnet.
   private ForwardDeadReckonPropNet                                     fullPropNet                     = null;
@@ -1221,7 +1221,7 @@ public class ForwardDeadReckonPropnetStateMachine extends StateMachine
     }
   }
 
-  public void validateStateEquality(ForwardDeadReckonPropnetStateMachine other)
+  public void validateStateEquality(ForwardDeadReckonPropnetRuleEngine other)
   {
     if (!lastInternalSetState.equals(other.lastInternalSetState))
     {
@@ -1510,7 +1510,7 @@ public class ForwardDeadReckonPropnetStateMachine extends StateMachine
     return result;
   }
 
-  public ForwardDeadReckonPropnetStateMachine()
+  public ForwardDeadReckonPropnetRuleEngine()
   {
     maxInstances = 1;
     ourRole = null;
@@ -1518,7 +1518,7 @@ public class ForwardDeadReckonPropnetStateMachine extends StateMachine
     mMaster = this;
   }
 
-  public ForwardDeadReckonPropnetStateMachine(int xiMaxInstances,
+  public ForwardDeadReckonPropnetRuleEngine(int xiMaxInstances,
                                               long xiMetaGameTimeout,
                                               Role xiOurRole,
                                               RuntimeGameCharacteristics xiGameCharacteristics)
@@ -1530,7 +1530,7 @@ public class ForwardDeadReckonPropnetStateMachine extends StateMachine
     mMaster = this;
   }
 
-  private ForwardDeadReckonPropnetStateMachine(ForwardDeadReckonPropnetStateMachine master, int instanceId)
+  private ForwardDeadReckonPropnetRuleEngine(ForwardDeadReckonPropnetRuleEngine master, int instanceId)
   {
     mMaster = master;
     maxInstances = -1;
@@ -1598,14 +1598,14 @@ public class ForwardDeadReckonPropnetStateMachine extends StateMachine
                                              fullPropNet.getLegalPropositions().get(getRolesArray()[0]).length);
   }
 
-  public ForwardDeadReckonPropnetStateMachine createInstance()
+  public ForwardDeadReckonPropnetRuleEngine createInstance()
   {
     if (numInstances >= maxInstances)
     {
       throw new RuntimeException("Too many instances");
     }
 
-    ForwardDeadReckonPropnetStateMachine result = new ForwardDeadReckonPropnetStateMachine(this, numInstances++);
+    ForwardDeadReckonPropnetRuleEngine result = new ForwardDeadReckonPropnetRuleEngine(this, numInstances++);
 
     return result;
   }

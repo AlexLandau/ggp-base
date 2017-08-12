@@ -14,7 +14,7 @@ public class NullStateMachineFilter implements StateMachineFilter
 {
   @Override
   public boolean isFilteredTerminal(ForwardDeadReckonInternalMachineState xiState,
-                                    ForwardDeadReckonPropnetStateMachine xiStateMachine)
+                                    ForwardDeadReckonPropnetRuleEngine xiStateMachine)
   {
     return xiStateMachine.isTerminal(xiState);
   }

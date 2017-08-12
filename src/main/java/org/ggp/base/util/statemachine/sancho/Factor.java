@@ -163,7 +163,7 @@ public class Factor implements StateMachineFilter
    *
    * @param xiStateMachine - a state machine, used to create the state masks.
    */
-  public void complete(ForwardDeadReckonPropnetStateMachine xiStateMachine)
+  public void complete(ForwardDeadReckonPropnetRuleEngine xiStateMachine)
   {
     setUpStateMasks(xiStateMachine);
     cacheMoves();
@@ -172,7 +172,7 @@ public class Factor implements StateMachineFilter
   /**
    * Set up state masks for the factor state.
    */
-  private void setUpStateMasks(ForwardDeadReckonPropnetStateMachine xiStateMachine)
+  private void setUpStateMasks(ForwardDeadReckonPropnetRuleEngine xiStateMachine)
   {
     assert(mFactorSpecificStateMask == null) : "Factor-specific state mask already set up";
     assert(mInverseFactorSpecificStateMask == null) : "Inverse factor-specific state mask already set up";
@@ -292,7 +292,7 @@ public class Factor implements StateMachineFilter
 
   @Override
   public boolean isFilteredTerminal(ForwardDeadReckonInternalMachineState xiState,
-                                    ForwardDeadReckonPropnetStateMachine xiStateMachine)
+                                    ForwardDeadReckonPropnetRuleEngine xiStateMachine)
   {
     return xiStateMachine.isTerminal(xiState);
   }

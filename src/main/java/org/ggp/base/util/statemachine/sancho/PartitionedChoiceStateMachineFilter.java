@@ -54,7 +54,7 @@ public class PartitionedChoiceStateMachineFilter implements StateMachineFilter
    * Constructor
    * @param xiMachine underlying state machine
    */
-  public PartitionedChoiceStateMachineFilter(ForwardDeadReckonPropnetStateMachine xiMachine)
+  public PartitionedChoiceStateMachineFilter(ForwardDeadReckonPropnetRuleEngine xiMachine)
   {
     activeState = xiMachine.createEmptyInternalState();
     activePartitionBuffer = new ForwardDeadReckonLegalMoveSet(xiMachine.getFullPropNet().getActiveLegalProps(0));
@@ -113,7 +113,7 @@ public class PartitionedChoiceStateMachineFilter implements StateMachineFilter
 
   @Override
   public boolean isFilteredTerminal(ForwardDeadReckonInternalMachineState xiState,
-                                    ForwardDeadReckonPropnetStateMachine xiStateMachine)
+                                    ForwardDeadReckonPropnetRuleEngine xiStateMachine)
   {
     //  If this is not the state we have cached the active set for then calculate it
     if ( !activeState.equals(xiState))

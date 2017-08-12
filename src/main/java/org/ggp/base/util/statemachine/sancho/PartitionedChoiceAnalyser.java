@@ -23,13 +23,13 @@ public class PartitionedChoiceAnalyser
 {
 //  private static final Logger LOGGER = LogManager.getLogger();
 
-  private final ForwardDeadReckonPropnetStateMachine stateMachine;
+  private final ForwardDeadReckonPropnetRuleEngine stateMachine;
 
   /**
    * Construct the analyser
    * @param xiMachine - state machine to analyze
    */
-  public PartitionedChoiceAnalyser(ForwardDeadReckonPropnetStateMachine xiMachine)
+  public PartitionedChoiceAnalyser(ForwardDeadReckonPropnetRuleEngine xiMachine)
   {
     stateMachine = xiMachine;
   }

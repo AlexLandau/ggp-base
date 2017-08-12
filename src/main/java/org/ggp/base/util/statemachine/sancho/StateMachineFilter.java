@@ -28,7 +28,7 @@ public interface StateMachineFilter
    * @return virtual terminality.
    */
   boolean isFilteredTerminal(ForwardDeadReckonInternalMachineState xiState,
-                             ForwardDeadReckonPropnetStateMachine xiStateMachine);
+                             ForwardDeadReckonPropnetRuleEngine xiStateMachine);
 
   /**
    * Count available legal moves given a raw collection from the state machine

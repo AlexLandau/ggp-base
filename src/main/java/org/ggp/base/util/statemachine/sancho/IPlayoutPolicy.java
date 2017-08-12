@@ -15,7 +15,7 @@ public interface IPlayoutPolicy
    * @param stateMachine
    * @return a clone suitable for operation with the indicated state machine instance
    */
-  public IPlayoutPolicy cloneFor(ForwardDeadReckonPropnetStateMachine stateMachine);
+  public IPlayoutPolicy cloneFor(ForwardDeadReckonPropnetRuleEngine stateMachine);
   /**
    * @param state - current state with respect to which subsequent queries will be made
    * @param legalMoves  - moves available in this state
