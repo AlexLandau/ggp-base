@@ -15,10 +15,10 @@ import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
 
+import org.ggp.base.util.ImmutableIntArray;
 import org.ggp.base.util.gdl.grammar.Gdl;
 import org.ggp.base.util.gdl.grammar.GdlSentence;
-import org.ggp.base.util.propnet.architecture.Component;
-import org.ggp.base.util.propnet.architecture.PropNet;
+import org.ggp.base.util.gdl.grammar.GdlTerm;
 import org.ggp.base.util.propnet.factory.sancho.OptimizingPolymorphicPropNetFactory;
 import org.ggp.base.util.propnet.sancho.ForwardDeadReckonComponent;
 import org.ggp.base.util.propnet.sancho.ForwardDeadReckonComponentFactory;
@@ -39,22 +39,26 @@ import org.ggp.base.util.propnet.sancho.PolymorphicOr;
 import org.ggp.base.util.propnet.sancho.PolymorphicPropNet;
 import org.ggp.base.util.propnet.sancho.PolymorphicProposition;
 import org.ggp.base.util.propnet.sancho.PolymorphicTransition;
+import org.ggp.base.util.ruleengine.GameDescriptionException;
+import org.ggp.base.util.ruleengine.RuleEngine;
+import org.ggp.base.util.ruleengine.Translator;
 import org.ggp.base.util.statemachine.MachineState;
 import org.ggp.base.util.statemachine.Move;
 import org.ggp.base.util.statemachine.Role;
 import org.ggp.base.util.statemachine.StateMachine;
-import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 import org.ggp.base.util.statemachine.implementation.prover.query.ProverQueryBuilder;
 import org.ggp.base.util.statemachine.sancho.FactorAnalyser.FactorInfo;
+
+import com.google.common.collect.ImmutableMap;
 
 /**
  * A state machine.
  *
  * This class is not thread-safe.  Each instance must be accessed by a single thread.
  */
-public class ForwardDeadReckonPropnetRuleEngine extends StateMachine
+public class ForwardDeadReckonPropnetRuleEngine implements RuleEngine<Move, MachineState>
 {
 //  private static final Logger LOGGER = LogManager.getLogger();
 
@@ -1610,7 +1614,6 @@ public class ForwardDeadReckonPropnetRuleEngine extends StateMachine
     return result;
   }
 
-  @Override
   public void initialize(List<Gdl> description)
   {
     // Log the GDL so that we can play again as required.
@@ -1861,7 +1864,7 @@ public class ForwardDeadReckonPropnetRuleEngine extends StateMachine
           performDepthCharge(initialState, null);
         }
       }
-      catch (TransitionDefinitionException | MoveDefinitionException | GoalDefinitionException lEx)
+      catch (GameDescriptionException lEx)
       {
 //        LOGGER.warn("Exception performing depth charges", lEx);
       }
@@ -2377,7 +2380,8 @@ public class ForwardDeadReckonPropnetRuleEngine extends StateMachine
   /**
    * @return number of roles in the game
    */
-  public int getNumRoles()
+  @Override
+public int getNumRoles()
   {
     return numRoles;
   }
@@ -2736,7 +2740,6 @@ public class ForwardDeadReckonPropnetRuleEngine extends StateMachine
    * exactly one goal proposition true for that role, then you should throw a
    * GoalDefinitionException because the goal is ill-defined.
    */
-  @Override
   public int getGoal(MachineState state, Role role)
   {
     ForwardDeadReckonInternalMachineState internalState = createInternalState(state);
@@ -2763,7 +2766,6 @@ public class ForwardDeadReckonPropnetRuleEngine extends StateMachine
   /**
    * Computes the legal moves for role in state.
    */
-  @Override
   public List<Move> getLegalMoves(MachineState state, Role role)
   {
     ForwardDeadReckonInternalMachineState internalState = createInternalState(state);
@@ -3197,7 +3199,6 @@ public class ForwardDeadReckonPropnetRuleEngine extends StateMachine
 
   private Map<Role, List<Move>> recentLegalMoveSetsList = new HashMap<>();
 
-  @Override
   public Move getRandomMove(MachineState state, Role role)
       throws MoveDefinitionException
   {
@@ -4851,43 +4852,79 @@ public class ForwardDeadReckonPropnetRuleEngine extends StateMachine
     return randomGen.nextInt(n);
   }
 
-  @Override
-  public StateMachine getSynchronizedCopy() {
-      throw new UnsupportedOperationException();
+  /**
+   * Returns goals from a terminal state derived from repeatedly making random joint moves
+   * until reaching the end of the game.
+   *
+   * @param theDepth an integer array, the 0th element of which will be set to
+   * the number of state changes that were made to reach a terminal state.
+   */
+  public ImmutableIntArray performDepthCharge(MachineState state, final int[] theDepth) throws GameDescriptionException {
+      int nDepth = 0;
+      while(!isTerminal(state)) {
+          nDepth++;
+          state = getNextState(state, getRandomJointMove(state));
+      }
+      if(theDepth != null)
+          theDepth[0] = nDepth;
+      return getGoals(state);
+  }
+
+  private Map<Role,Integer> roleIndices = null;
+  /**
+   * Returns a mapping from a role to the index of that role, as in
+   * the list returned by {@link #getRoles()}. This may be a faster
+   * way to check the index of a role than calling {@link List#indexOf(Object)}
+   * on that list.
+   */
+  public Map<Role, Integer> getRoleIndices()
+  {
+      if (roleIndices == null) {
+          ImmutableMap.Builder<Role, Integer> roleIndicesBuilder = ImmutableMap.builder();
+          List<Role> roles = getRoles();
+          for (int i = 0; i < roles.size(); i++) {
+              roleIndicesBuilder.put(roles.get(i), i);
+          }
+          roleIndices = roleIndicesBuilder.build();
+      }
+
+      return roleIndices;
   }
 
   @Override
-  public Map<Role, Move> getGebMoves(MachineState state) {
-      throw new UnsupportedOperationException();
+  public int getGoal(MachineState state, int roleIndex) throws GameDescriptionException {
+      return getGoal(state, roles[roleIndex]);
   }
 
   @Override
-  public MachineState translateState(MachineState state) {
-      throw new UnsupportedOperationException();
+  public List<Move> getLegalMoves(MachineState state, int roleIndex) throws GameDescriptionException {
+      return getLegalMoves(state, roles[roleIndex]);
   }
 
-  @Override
-  public boolean isNative(MachineState state) {
-      throw new UnsupportedOperationException();
-  }
+  private final Translator<Move, MachineState> translator = new Translator<Move, MachineState>() {
+    @Override
+    public GdlTerm getGdlMove(Move move) {
+        return move.getContents();
+    }
+
+    @Override
+    public Move getNativeMove(int roleIndex, GdlTerm move) {
+        return new Move(move);
+    }
+
+    @Override
+    public Set<GdlSentence> getGdlState(MachineState state) {
+        return state.getContents();
+    }
+
+    @Override
+    public MachineState getNativeState(Set<GdlSentence> state) {
+        return new MachineState(state);
+    }
+  };
 
   @Override
-  public boolean isPropNetBased() {
-      throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public PropNet getPropNet() {
-      throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public boolean getComponentValue(MachineState state, Component component) {
-      throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public int getComponentTrueInputsCount(MachineState state, Component component) {
-      throw new UnsupportedOperationException();
+  public Translator<Move, MachineState> getTranslator() {
+      return translator;
   }
 }

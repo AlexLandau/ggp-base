@@ -1,7 +1,6 @@
 package org.ggp.base.util.statemachine.sancho;
 
 import org.ggp.base.util.statemachine.Role;
-import org.ggp.base.util.statemachine.StateMachine;
 
 public class RoleOrdering
 {
@@ -20,7 +19,7 @@ public class RoleOrdering
    * @param underlyingStateMachine
    * @param ourRole
    */
-  public RoleOrdering(StateMachine underlyingStateMachine, Role ourRole)
+  public RoleOrdering(ForwardDeadReckonPropnetRuleEngine underlyingStateMachine, Role ourRole)
   {
     int numRoles = underlyingStateMachine.getRoles().size();
     reorderedRoles = new Role[numRoles];
