@@ -15,8 +15,8 @@ import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
 
-import org.ggp.base.util.ImmutableIntArray;
 import org.ggp.base.util.gdl.grammar.Gdl;
+import org.ggp.base.util.gdl.grammar.GdlPool;
 import org.ggp.base.util.gdl.grammar.GdlSentence;
 import org.ggp.base.util.gdl.grammar.GdlTerm;
 import org.ggp.base.util.propnet.factory.sancho.OptimizingPolymorphicPropNetFactory;
@@ -58,7 +58,7 @@ import com.google.common.collect.ImmutableMap;
  *
  * This class is not thread-safe.  Each instance must be accessed by a single thread.
  */
-public class ForwardDeadReckonPropnetRuleEngine implements RuleEngine<Move, MachineState>
+public class ForwardDeadReckonPropnetRuleEngine implements RuleEngine<ForwardDeadReckonLegalMoveInfo, ForwardDeadReckonInternalMachineState>
 {
 //  private static final Logger LOGGER = LogManager.getLogger();
 
@@ -422,7 +422,7 @@ public class ForwardDeadReckonPropnetRuleEngine implements RuleEngine<Move, Mach
 
   public ForwardDeadReckonInternalMachineState createEmptyInternalState()
   {
-    return new ForwardDeadReckonInternalMachineState(masterInfoSet, firstBasePropIndex);
+    return new ForwardDeadReckonInternalMachineState(masterInfoSet, firstBasePropIndex, translator);
   }
 
   public ForwardDeadReckonInternalMachineState createInternalState(MachineState state)
@@ -2683,14 +2683,15 @@ public int getNumRoles()
    * Computes if the state is terminal. Should return the value of the terminal
    * proposition for the state.
    */
-  @Override
+//  @Override
   public boolean isTerminal(MachineState state)
   {
     ForwardDeadReckonInternalMachineState internalState = createInternalState(state);
     return isTerminal(internalState);
   }
 
-  public boolean isTerminal(ForwardDeadReckonInternalMachineState state)
+  @Override
+public boolean isTerminal(ForwardDeadReckonInternalMachineState state)
   {
     setPropNetUsage(state);
     setBasePropositionsFromState(state);
@@ -2757,10 +2758,10 @@ public int getNumRoles()
    * computing the resulting state.
    */
   @Override
-  public MachineState getInitialState()
+  public ForwardDeadReckonInternalMachineState getInitialState()
   {
 //    LOGGER.trace("Initial state: " + initialState);
-    return initialState;
+    return createInternalState(initialState);
   }
 
   /**
@@ -2883,10 +2884,17 @@ public int getNumRoles()
     }
   }
 
+
+  @Override
+  public ForwardDeadReckonInternalMachineState getNextState(ForwardDeadReckonInternalMachineState state,
+          List<ForwardDeadReckonLegalMoveInfo> jointMoves) throws GameDescriptionException {
+      return createInternalState(getNextState(state.getMachineState(), translator.getMoveObjects(jointMoves)));
+  }
+
   /**
    * Computes the next state given state and the list of moves.
    */
-  @Override
+//  @Override
   public MachineState getNextState(MachineState state, List<Move> moves)
   {
     //RuntimeOptimizedComponent.getCount = 0;
@@ -3149,6 +3157,12 @@ public int getNumRoles()
       doeses.add(ProverQueryBuilder.toDoes(lRole, moves.get(index)));
     }
     return doeses;
+  }
+
+  private GdlSentence toDoes(GdlTerm move, int roleIndex)
+  {
+      Role lRole = roles[roleIndex];
+      return GdlPool.getRelation(GdlPool.DOES, new GdlTerm[] { lRole.getName(), move });
   }
 
   private void propagateCalculatedNextState()
@@ -4859,7 +4873,18 @@ public int getNumRoles()
    * @param theDepth an integer array, the 0th element of which will be set to
    * the number of state changes that were made to reach a terminal state.
    */
-  public ImmutableIntArray performDepthCharge(MachineState state, final int[] theDepth) throws GameDescriptionException {
+  public void performDepthCharge(MachineState state, final int[] theDepth) throws GameDescriptionException {
+      performDepthCharge(createInternalState(state), theDepth);
+  }
+
+  /**
+   * Returns goals from a terminal state derived from repeatedly making random joint moves
+   * until reaching the end of the game.
+   *
+   * @param theDepth an integer array, the 0th element of which will be set to
+   * the number of state changes that were made to reach a terminal state.
+   */
+  public void performDepthCharge(ForwardDeadReckonInternalMachineState state, final int[] theDepth) throws GameDescriptionException {
       int nDepth = 0;
       while(!isTerminal(state)) {
           nDepth++;
@@ -4867,7 +4892,7 @@ public int getNumRoles()
       }
       if(theDepth != null)
           theDepth[0] = nDepth;
-      return getGoals(state);
+//      return getGoals(state);
   }
 
   private Map<Role,Integer> roleIndices = null;
@@ -4892,39 +4917,73 @@ public int getNumRoles()
   }
 
   @Override
-  public int getGoal(MachineState state, int roleIndex) throws GameDescriptionException {
+  public int getGoal(ForwardDeadReckonInternalMachineState state, int roleIndex) throws GameDescriptionException {
       return getGoal(state, roles[roleIndex]);
   }
 
   @Override
-  public List<Move> getLegalMoves(MachineState state, int roleIndex) throws GameDescriptionException {
-      return getLegalMoves(state, roles[roleIndex]);
+  public List<ForwardDeadReckonLegalMoveInfo> getLegalMoves(ForwardDeadReckonInternalMachineState state, int roleIndex) throws GameDescriptionException {
+      Role role = roles[roleIndex];
+      List<ForwardDeadReckonLegalMoveInfo> result;
+
+      ForwardDeadReckonLegalMoveSet moveSet = getLegalMoveSet(state);
+
+      result = new LinkedList<>();
+      for (ForwardDeadReckonLegalMoveInfo moveInfo : moveSet.getContents(role))
+      {
+        result.add(moveInfo);
+      }
+
+      return result;
   }
 
-  private final Translator<Move, MachineState> translator = new Translator<Move, MachineState>() {
+  private final Translator<ForwardDeadReckonLegalMoveInfo, ForwardDeadReckonInternalMachineState> translator = new Translator<ForwardDeadReckonLegalMoveInfo, ForwardDeadReckonInternalMachineState>() {
     @Override
-    public GdlTerm getGdlMove(Move move) {
-        return move.getContents();
+    public GdlTerm getGdlMove(ForwardDeadReckonLegalMoveInfo move) {
+        return move.mMove.getContents();
     }
 
     @Override
-    public Move getNativeMove(int roleIndex, GdlTerm move) {
-        return new Move(move);
+    public ForwardDeadReckonLegalMoveInfo getNativeMove(ForwardDeadReckonInternalMachineState state, int roleIndex, GdlTerm move) {
+
+        setPropNetUsage(state);
+
+        Map<GdlSentence, PolymorphicProposition> inputProps = propNet.getInputPropositions();
+        Map<PolymorphicProposition, PolymorphicProposition> legalInputMap = propNet.getLegalInputMap();
+
+        GdlSentence moveSentence = toDoes(move, roleIndex);
+        ForwardDeadReckonProposition moveInputProposition = (ForwardDeadReckonProposition)inputProps.get(moveSentence);
+        ForwardDeadReckonLegalMoveInfo moveInfo;
+
+        if (moveInputProposition != null)
+        {
+            ForwardDeadReckonProposition legalProp = (ForwardDeadReckonProposition)legalInputMap.get(moveInputProposition);
+
+            moveInfo = propNet.getMasterMoveList()[legalProp.getInfo().index];
+        }
+        else
+        {
+            moveInfo = new ForwardDeadReckonLegalMoveInfo();
+
+            moveInfo.mIsPseudoNoOp = true;
+        }
+        moveInfo.mMove = new Move(move);
+        return moveInfo;
     }
 
     @Override
-    public Set<GdlSentence> getGdlState(MachineState state) {
-        return state.getContents();
+    public Set<GdlSentence> getGdlState(ForwardDeadReckonInternalMachineState state) {
+        return state.getMachineState().getContents();
     }
 
     @Override
-    public MachineState getNativeState(Set<GdlSentence> state) {
-        return new MachineState(state);
+    public ForwardDeadReckonInternalMachineState getNativeState(Set<GdlSentence> state) {
+        return createInternalState(new MachineState(state));
     }
   };
 
   @Override
-  public Translator<Move, MachineState> getTranslator() {
+  public Translator<ForwardDeadReckonLegalMoveInfo, ForwardDeadReckonInternalMachineState> getTranslator() {
       return translator;
   }
 }

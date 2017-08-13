@@ -157,11 +157,11 @@ public ForwardDeadReckonPropNet(Role[] roles,
     }
 
     activeBasePropositions = new ForwardDeadReckonInternalMachineState[numInstances];
-    alwaysTrueBasePropositions = new ForwardDeadReckonInternalMachineState(masterInfoSet, firstBasePropIndex);
+    alwaysTrueBasePropositions = new ForwardDeadReckonInternalMachineState(masterInfoSet, firstBasePropIndex, null);
 
     for (int instanceId = 0; instanceId < numInstances; instanceId++)
     {
-      activeBasePropositions[instanceId] = new ForwardDeadReckonInternalMachineState(masterInfoSet, firstBasePropIndex);
+      activeBasePropositions[instanceId] = new ForwardDeadReckonInternalMachineState(masterInfoSet, firstBasePropIndex, null);
 
       for (PolymorphicProposition p : getBasePropositions().values())
       {

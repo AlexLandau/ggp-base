@@ -6,13 +6,16 @@ import java.util.Iterator;
 
 import org.apache.lucene.util.OpenBitSet;
 import org.ggp.base.util.gdl.grammar.GdlSentence;
+import org.ggp.base.util.ruleengine.RuleEngineState;
+import org.ggp.base.util.ruleengine.Translator;
 import org.ggp.base.util.statemachine.MachineState;
 import org.ggp.base.util.statemachine.sancho.ForwardDeadReckonPropositionCrossReferenceInfo;
 
 /**
  * Internal representation of a machine state, intended for efficient runtime usage
  */
-public class ForwardDeadReckonInternalMachineState implements ForwardDeadReckonComponentTransitionNotifier
+public class ForwardDeadReckonInternalMachineState implements ForwardDeadReckonComponentTransitionNotifier,
+                                                              RuleEngineState<ForwardDeadReckonLegalMoveInfo, ForwardDeadReckonInternalMachineState>
 {
   /**
    * An iterator over the propositions that are set in a machine state.
@@ -108,17 +111,21 @@ public class ForwardDeadReckonInternalMachineState implements ForwardDeadReckonC
    */
   public boolean                                   isXState = false;
 
+  private final Translator<ForwardDeadReckonLegalMoveInfo, ForwardDeadReckonInternalMachineState> translator;
+
   /**
    * Construct a new empty state for the given set of possible base propositions
    * @param masterInfoSet list of the possible base propositions that may occur
    * @param xiFirstBasePropIndex index of first base prop (previous are pseudo-triggers for goals/terminal)
    */
-  public ForwardDeadReckonInternalMachineState(ForwardDeadReckonPropositionCrossReferenceInfo[] masterInfoSet, int xiFirstBasePropIndex)
+  public ForwardDeadReckonInternalMachineState(ForwardDeadReckonPropositionCrossReferenceInfo[] masterInfoSet, int xiFirstBasePropIndex,
+          Translator<ForwardDeadReckonLegalMoveInfo, ForwardDeadReckonInternalMachineState> translator)
   {
     assert(xiFirstBasePropIndex > 1);
     infoSet = masterInfoSet;
     firstBasePropIndex = xiFirstBasePropIndex;
     contents = new OpenBitSet(infoSet.length);
+    this.translator = translator;
   }
 
   /**
@@ -130,7 +137,7 @@ public class ForwardDeadReckonInternalMachineState implements ForwardDeadReckonC
    */
   public ForwardDeadReckonInternalMachineState(ForwardDeadReckonInternalMachineState copyFrom)
   {
-    this(copyFrom.infoSet, copyFrom.firstBasePropIndex);
+    this(copyFrom.infoSet, copyFrom.firstBasePropIndex, copyFrom.translator);
     copy(copyFrom);
 
     if ( copyFrom.hashCached )
@@ -504,5 +511,10 @@ public class ForwardDeadReckonInternalMachineState implements ForwardDeadReckonC
   public boolean contains(ForwardDeadReckonInternalMachineState other)
   {
     return (OpenBitSet.intersectionCount(contents, other.contents) == other.contents.cardinality());
+  }
+
+  @Override
+  public Translator<ForwardDeadReckonLegalMoveInfo, ForwardDeadReckonInternalMachineState> getTranslator() {
+      return translator;
   }
 }
