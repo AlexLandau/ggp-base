@@ -46,7 +46,6 @@ import org.ggp.base.util.statemachine.MachineState;
 import org.ggp.base.util.statemachine.Move;
 import org.ggp.base.util.statemachine.Role;
 import org.ggp.base.util.statemachine.StateMachine;
-import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 import org.ggp.base.util.statemachine.implementation.prover.query.ProverQueryBuilder;
 import org.ggp.base.util.statemachine.sancho.FactorAnalyser.FactorInfo;
@@ -2395,10 +2394,10 @@ public int getNumRoles()
     return mControlMask;
   }
 
-  private void setBasePropositionsFromState(MachineState state)
-  {
-    setBasePropositionsFromState(createInternalState(state));
-  }
+//  private void setBasePropositionsFromState(MachineState state)
+//  {
+//    setBasePropositionsFromState(createInternalState(state));
+//  }
 
   private ForwardDeadReckonInternalMachineState stateBufferX1 = null;
   private ForwardDeadReckonInternalMachineState stateBufferX2 = null;
@@ -2679,17 +2678,17 @@ public int getNumRoles()
     }
   }
 
+//  @Override
+//  public boolean isTerminal(MachineState state)
+//  {
+//    ForwardDeadReckonInternalMachineState internalState = createInternalState(state);
+//    return isTerminal(internalState);
+//  }
+
   /**
    * Computes if the state is terminal. Should return the value of the terminal
    * proposition for the state.
    */
-//  @Override
-  public boolean isTerminal(MachineState state)
-  {
-    ForwardDeadReckonInternalMachineState internalState = createInternalState(state);
-    return isTerminal(internalState);
-  }
-
   @Override
 public boolean isTerminal(ForwardDeadReckonInternalMachineState state)
   {
@@ -2735,17 +2734,11 @@ public boolean isTerminal(ForwardDeadReckonInternalMachineState state)
     return result;
   }
 
-  /**
-   * Computes the goal for a role in the current state. Should return the value
-   * of the goal proposition that is true for that role. If there is not
-   * exactly one goal proposition true for that role, then you should throw a
-   * GoalDefinitionException because the goal is ill-defined.
-   */
-  public int getGoal(MachineState state, Role role)
-  {
-    ForwardDeadReckonInternalMachineState internalState = createInternalState(state);
-    return getGoal(internalState, role);
-  }
+//  public int getGoal(MachineState state, Role role)
+//  {
+//    ForwardDeadReckonInternalMachineState internalState = createInternalState(state);
+//    return getGoal(internalState, role);
+//  }
 
   public int getGoal(Role role)
   {
@@ -2764,16 +2757,16 @@ public boolean isTerminal(ForwardDeadReckonInternalMachineState state)
     return createInternalState(initialState);
   }
 
+//  public List<Move> getLegalMoves(MachineState state, Role role)
+//  {
+//    ForwardDeadReckonInternalMachineState internalState = createInternalState(state);
+//
+//    return getLegalMovesCopy(internalState, role);
+//  }
+
   /**
    * Computes the legal moves for role in state.
    */
-  public List<Move> getLegalMoves(MachineState state, Role role)
-  {
-    ForwardDeadReckonInternalMachineState internalState = createInternalState(state);
-
-    return getLegalMovesCopy(internalState, role);
-  }
-
   public List<Move> getLegalMovesCopy(ForwardDeadReckonInternalMachineState state, Role role)
   {
     List<Move> result;
@@ -2789,22 +2782,22 @@ public boolean isTerminal(ForwardDeadReckonInternalMachineState state)
     return result;
   }
 
-  /**
-   * @return the legal moves in the specified state for the specified role.
-   *
-   * @param state - the state.
-   * @param role  - the role.
-   *
-   * WARNING: This version of the function returns a collection backed by a pre-allocated array.  It is only suitable
-   *          for immediate use and not to be stored.
-   */
-  public Collection<ForwardDeadReckonLegalMoveInfo> getLegalMoves(ForwardDeadReckonInternalMachineState state,
-                                                                  Role role)
-  {
-    Collection<ForwardDeadReckonLegalMoveInfo> lResult = getLegalMoveSet(state).getContents(role);
-    assert(lResult.size() > 0);
-    return lResult;
-  }
+//  /**
+//   * @return the legal moves in the specified state for the specified role.
+//   *
+//   * @param state - the state.
+//   * @param role  - the role.
+//   *
+//   * WARNING: This version of the function returns a collection backed by a pre-allocated array.  It is only suitable
+//   *          for immediate use and not to be stored.
+//   */
+//  public Collection<ForwardDeadReckonLegalMoveInfo> getLegalMoves(ForwardDeadReckonInternalMachineState state,
+//                                                                  Role role)
+//  {
+//    Collection<ForwardDeadReckonLegalMoveInfo> lResult = getLegalMoveSet(state).getContents(role);
+//    assert(lResult.size() > 0);
+//    return lResult;
+//  }
 
   /**
    * @return the legal moves in the specified state as a ForwardDeadReckonLegalMoveSet.
@@ -2821,37 +2814,37 @@ public boolean isTerminal(ForwardDeadReckonInternalMachineState state)
     return propNet.getActiveLegalProps(instanceId);
   }
 
-  /**
-   * @return whether a specified move is legal for a role in a state.
-   *
-   * @param state - the state.
-   * @param role  - the role.
-   * @param move  - the proposed move.
-   *
-   * @throws MoveDefinitionException if the GDL is malformed.
-   */
-  public boolean isLegalMove(MachineState state, Role role, Move move) throws MoveDefinitionException
-  {
-    setPropNetUsage(state);
-    setBasePropositionsFromState(state);
+//  /**
+//   * @return whether a specified move is legal for a role in a state.
+//   *
+//   * @param state - the state.
+//   * @param role  - the role.
+//   * @param move  - the proposed move.
+//   *
+//   * @throws MoveDefinitionException if the GDL is malformed.
+//   */
+//  public boolean isLegalMove(MachineState state, Role role, Move move) throws MoveDefinitionException
+//  {
+//    setPropNetUsage(state);
+//    setBasePropositionsFromState(state);
+//
+//    Map<GdlSentence, PolymorphicProposition> inputProps = propNet.getInputPropositions();
+//
+//    GdlSentence moveSentence = ProverQueryBuilder.toDoes(role, move);
+//    PolymorphicProposition moveInputProposition = inputProps.get(moveSentence);
+//    PolymorphicProposition legalProp = propNet.getLegalInputMap().get(moveInputProposition);
+//    if (legalProp != null)
+//    {
+//      return ((ForwardDeadReckonComponent)legalProp.getSingleInput()).getValue(instanceId);
+//    }
+//
+//    throw new MoveDefinitionException(state, role);
+//  }
 
-    Map<GdlSentence, PolymorphicProposition> inputProps = propNet.getInputPropositions();
-
-    GdlSentence moveSentence = ProverQueryBuilder.toDoes(role, move);
-    PolymorphicProposition moveInputProposition = inputProps.get(moveSentence);
-    PolymorphicProposition legalProp = propNet.getLegalInputMap().get(moveInputProposition);
-    if (legalProp != null)
-    {
-      return ((ForwardDeadReckonComponent)legalProp.getSingleInput()).getValue(instanceId);
-    }
-
-    throw new MoveDefinitionException(state, role);
-  }
-
-  private void setPropNetUsage(MachineState state)
-  {
-    setPropNetUsage(createInternalState(state));
-  }
+//  private void setPropNetUsage(MachineState state)
+//  {
+//    setPropNetUsage(createInternalState(state));
+//  }
 
   private void setPropNetUsage(ForwardDeadReckonInternalMachineState state)
   {
@@ -3111,29 +3104,29 @@ public boolean isTerminal(ForwardDeadReckonInternalMachineState state)
 
   /* Helper methods */
 
-  /**
-   * The Input propositions are indexed by (does ?player ?action). This
-   * translates a list of Moves (backed by a sentence that is simply ?action)
-   * into GdlSentences that can be used to get Propositions from
-   * inputPropositions. and accordingly set their values etc. This is a naive
-   * implementation when coupled with setting input values, feel free to change
-   * this for a more efficient implementation.
-   *
-   * @param moves
-   * @return
-   */
-  private List<GdlSentence> toDoes(Move[] moves)
-  {
-    List<GdlSentence> doeses = new ArrayList<>(moves.length);
-    Map<Role, Integer> roleIndices = getRoleIndices();
-
-    for (Role lRole : roles)
-    {
-      int index = roleIndices.get(lRole);
-      doeses.add(ProverQueryBuilder.toDoes(lRole, moves[index]));
-    }
-    return doeses;
-  }
+//  /**
+//   * The Input propositions are indexed by (does ?player ?action). This
+//   * translates a list of Moves (backed by a sentence that is simply ?action)
+//   * into GdlSentences that can be used to get Propositions from
+//   * inputPropositions. and accordingly set their values etc. This is a naive
+//   * implementation when coupled with setting input values, feel free to change
+//   * this for a more efficient implementation.
+//   *
+//   * @param moves
+//   * @return
+//   */
+//  private List<GdlSentence> toDoes(Move[] moves)
+//  {
+//    List<GdlSentence> doeses = new ArrayList<>(moves.length);
+//    Map<Role, Integer> roleIndices = getRoleIndices();
+//
+//    for (Role lRole : roles)
+//    {
+//      int index = roleIndices.get(lRole);
+//      doeses.add(ProverQueryBuilder.toDoes(lRole, moves[index]));
+//    }
+//    return doeses;
+//  }
 
   /**
    * The Input propositions are indexed by (does ?player ?action). This
@@ -3211,66 +3204,66 @@ public boolean isTerminal(ForwardDeadReckonInternalMachineState state)
   }
 
 
-  private Map<Role, List<Move>> recentLegalMoveSetsList = new HashMap<>();
+//  private Map<Role, List<Move>> recentLegalMoveSetsList = new HashMap<>();
 
-  public Move getRandomMove(MachineState state, Role role)
-      throws MoveDefinitionException
-  {
-    if (useSampleOfKnownLegals)
-    {
-      int choiceSeed = getRandom(100);
-      final int tryPreviousPercentage = 80;
-      List<Move> previouslyAvailableMoves = null;
-      boolean preferNew = false;
-
-      if (choiceSeed < tryPreviousPercentage &&
-          recentLegalMoveSetsList.keySet().contains(role))
-      {
-        previouslyAvailableMoves = recentLegalMoveSetsList.get(role);
-        Move result = previouslyAvailableMoves.get(getRandom(previouslyAvailableMoves.size()));
-
-        if (isLegalMove(state, role, result))
-        {
-          return result;
-        }
-      }
-      else if (choiceSeed > 100 - tryPreviousPercentage / 2)
-      {
-        preferNew = true;
-      }
-
-      List<Move> legals = getLegalMoves(state, role);
-      List<Move> candidates;
-
-      if (preferNew && previouslyAvailableMoves != null)
-      {
-        candidates = new LinkedList<>();
-
-        for (Move move : legals)
-        {
-          if (!previouslyAvailableMoves.contains(move))
-          {
-            candidates.add(move);
-          }
-        }
-      }
-      else
-      {
-        candidates = legals;
-      }
-
-      if (legals.size() > 1)
-      {
-        recentLegalMoveSetsList.put(role, legals);
-      }
-
-      return candidates.get(getRandom(candidates.size()));
-    }
-    List<Move> legals = getLegalMoves(state, role);
-
-    int randIndex = getRandom(legals.size());
-    return legals.get(randIndex);
-  }
+//  public Move getRandomMove(MachineState state, Role role)
+//      throws MoveDefinitionException
+//  {
+//    if (useSampleOfKnownLegals)
+//    {
+//      int choiceSeed = getRandom(100);
+//      final int tryPreviousPercentage = 80;
+//      List<Move> previouslyAvailableMoves = null;
+//      boolean preferNew = false;
+//
+//      if (choiceSeed < tryPreviousPercentage &&
+//          recentLegalMoveSetsList.keySet().contains(role))
+//      {
+//        previouslyAvailableMoves = recentLegalMoveSetsList.get(role);
+//        Move result = previouslyAvailableMoves.get(getRandom(previouslyAvailableMoves.size()));
+//
+//        if (isLegalMove(state, role, result))
+//        {
+//          return result;
+//        }
+//      }
+//      else if (choiceSeed > 100 - tryPreviousPercentage / 2)
+//      {
+//        preferNew = true;
+//      }
+//
+//      List<Move> legals = getLegalMoves(state, role);
+//      List<Move> candidates;
+//
+//      if (preferNew && previouslyAvailableMoves != null)
+//      {
+//        candidates = new LinkedList<>();
+//
+//        for (Move move : legals)
+//        {
+//          if (!previouslyAvailableMoves.contains(move))
+//          {
+//            candidates.add(move);
+//          }
+//        }
+//      }
+//      else
+//      {
+//        candidates = legals;
+//      }
+//
+//      if (legals.size() > 1)
+//      {
+//        recentLegalMoveSetsList.put(role, legals);
+//      }
+//
+//      return candidates.get(getRandom(candidates.size()));
+//    }
+//    List<Move> legals = getLegalMoves(state, role);
+//
+//    int randIndex = getRandom(legals.size());
+//    return legals.get(randIndex);
+//  }
 
   private class RolloutDecisionState
   {
