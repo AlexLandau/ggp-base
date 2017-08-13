@@ -6,7 +6,7 @@ import org.ggp.base.util.gdl.grammar.Gdl;
 import org.ggp.base.util.ruleengine.RuleEngineFactory;
 
 public class SanchoRuleEngineFactory implements RuleEngineFactory<ForwardDeadReckonPropnetRuleEngine> {
-    public static final String VERSION = "2017.08.12";
+    public static final String VERSION = "2017.08.13";
     public static final SanchoRuleEngineFactory INSTANCE = new SanchoRuleEngineFactory();
     private SanchoRuleEngineFactory() {
         // Singleton

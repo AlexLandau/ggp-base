@@ -2879,59 +2879,96 @@ public boolean isTerminal(ForwardDeadReckonInternalMachineState state)
 
 
   @Override
-  public ForwardDeadReckonInternalMachineState getNextState(ForwardDeadReckonInternalMachineState state,
+  public ForwardDeadReckonInternalMachineState getNextState(ForwardDeadReckonInternalMachineState internalState,
           List<ForwardDeadReckonLegalMoveInfo> jointMoves) throws GameDescriptionException {
-      return createInternalState(getNextState(state.getMachineState(), translator.getMoveObjects(jointMoves)));
-  }
+//      return createInternalState(getNextState(state.getMachineState(), translator.getMoveObjects(jointMoves)));
+//      ForwardDeadReckonInternalMachineState internalState = createInternalState(state);
 
-  /**
-   * Computes the next state given state and the list of moves.
-   */
-//  @Override
-  public MachineState getNextState(MachineState state, List<Move> moves)
-  {
-    //RuntimeOptimizedComponent.getCount = 0;
-    //RuntimeOptimizedComponent.dirtyCount = 0;
-    ForwardDeadReckonInternalMachineState internalState = createInternalState(state);
+      setPropNetUsage(internalState);
 
-    setPropNetUsage(internalState);
+      ForwardDeadReckonInternalMachineState internalResult = createEmptyInternalState();
+      ForwardDeadReckonLegalMoveInfo[] internalMoves = new ForwardDeadReckonLegalMoveInfo[jointMoves.size()];
 
-    ForwardDeadReckonInternalMachineState internalResult = createEmptyInternalState();
-    ForwardDeadReckonLegalMoveInfo[] internalMoves = new ForwardDeadReckonLegalMoveInfo[moves.size()];
+      Map<GdlSentence, PolymorphicProposition> inputProps = propNet.getInputPropositions();
+      Map<PolymorphicProposition, PolymorphicProposition> legalInputMap = propNet.getLegalInputMap();
+      int moveRawIndex = 0;
 
-    Map<GdlSentence, PolymorphicProposition> inputProps = propNet.getInputPropositions();
-    Map<PolymorphicProposition, PolymorphicProposition> legalInputMap = propNet.getLegalInputMap();
-    int moveRawIndex = 0;
-
-    for (GdlSentence moveSentence : toDoes(moves))
-    {
-      ForwardDeadReckonProposition moveInputProposition = (ForwardDeadReckonProposition)inputProps.get(moveSentence);
-      ForwardDeadReckonLegalMoveInfo moveInfo;
-
-      if (moveInputProposition != null)
+      for (GdlSentence moveSentence : toDoes2(jointMoves))
       {
-        ForwardDeadReckonProposition legalProp = (ForwardDeadReckonProposition)legalInputMap.get(moveInputProposition);
+        ForwardDeadReckonProposition moveInputProposition = (ForwardDeadReckonProposition)inputProps.get(moveSentence);
+        ForwardDeadReckonLegalMoveInfo moveInfo;
 
-        moveInfo = propNet.getMasterMoveList()[legalProp.getInfo().index];
-      }
-      else
-      {
-        moveInfo = new ForwardDeadReckonLegalMoveInfo();
+        if (moveInputProposition != null)
+        {
+          ForwardDeadReckonProposition legalProp = (ForwardDeadReckonProposition)legalInputMap.get(moveInputProposition);
 
-        moveInfo.mIsPseudoNoOp = true;
+          moveInfo = propNet.getMasterMoveList()[legalProp.getInfo().index];
+        }
+        else
+        {
+          moveInfo = new ForwardDeadReckonLegalMoveInfo();
+
+          moveInfo.mIsPseudoNoOp = true;
+        }
+
+        int internalMoveIndex = (roleOrdering == null ? moveRawIndex : roleOrdering.rawRoleIndexToRoleIndex(moveRawIndex));
+        internalMoves[internalMoveIndex] = moveInfo;
+        moveRawIndex++;
       }
 
-      int internalMoveIndex = (roleOrdering == null ? moveRawIndex : roleOrdering.rawRoleIndexToRoleIndex(moveRawIndex));
-      internalMoves[internalMoveIndex] = moveInfo;
-      moveRawIndex++;
-    }
+      getNextState(internalState, null, internalMoves, internalResult);
 
-    getNextState(internalState, null, internalMoves, internalResult);
-
-    MachineState result = getInternalStateFromBase(createEmptyInternalState()).getMachineState();
-
-    return result;
+      return getInternalStateFromBase(createEmptyInternalState());
   }
+
+//  /**
+//   * Computes the next state given state and the list of moves.
+//   */
+////  @Override
+//  public MachineState getNextState(MachineState state, List<Move> moves)
+//  {
+//    //RuntimeOptimizedComponent.getCount = 0;
+//    //RuntimeOptimizedComponent.dirtyCount = 0;
+//    ForwardDeadReckonInternalMachineState internalState = createInternalState(state);
+//
+//    setPropNetUsage(internalState);
+//
+//    ForwardDeadReckonInternalMachineState internalResult = createEmptyInternalState();
+//    ForwardDeadReckonLegalMoveInfo[] internalMoves = new ForwardDeadReckonLegalMoveInfo[moves.size()];
+//
+//    Map<GdlSentence, PolymorphicProposition> inputProps = propNet.getInputPropositions();
+//    Map<PolymorphicProposition, PolymorphicProposition> legalInputMap = propNet.getLegalInputMap();
+//    int moveRawIndex = 0;
+//
+//    for (GdlSentence moveSentence : toDoes(moves))
+//    {
+//      ForwardDeadReckonProposition moveInputProposition = (ForwardDeadReckonProposition)inputProps.get(moveSentence);
+//      ForwardDeadReckonLegalMoveInfo moveInfo;
+//
+//      if (moveInputProposition != null)
+//      {
+//        ForwardDeadReckonProposition legalProp = (ForwardDeadReckonProposition)legalInputMap.get(moveInputProposition);
+//
+//        moveInfo = propNet.getMasterMoveList()[legalProp.getInfo().index];
+//      }
+//      else
+//      {
+//        moveInfo = new ForwardDeadReckonLegalMoveInfo();
+//
+//        moveInfo.mIsPseudoNoOp = true;
+//      }
+//
+//      int internalMoveIndex = (roleOrdering == null ? moveRawIndex : roleOrdering.rawRoleIndexToRoleIndex(moveRawIndex));
+//      internalMoves[internalMoveIndex] = moveInfo;
+//      moveRawIndex++;
+//    }
+//
+//    getNextState(internalState, null, internalMoves, internalResult);
+//
+//    MachineState result = getInternalStateFromBase(createEmptyInternalState()).getMachineState();
+//
+//    return result;
+//  }
 
   /**
    * Get the next state given the current state and a set of moves.  Write the resulting state directly into the
@@ -3148,6 +3185,30 @@ public boolean isTerminal(ForwardDeadReckonInternalMachineState state)
     {
       int index = roleIndices.get(lRole);
       doeses.add(ProverQueryBuilder.toDoes(lRole, moves.get(index)));
+    }
+    return doeses;
+  }
+
+  /**
+   * The Input propositions are indexed by (does ?player ?action). This
+   * translates a list of Moves (backed by a sentence that is simply ?action)
+   * into GdlSentences that can be used to get Propositions from
+   * inputPropositions. and accordingly set their values etc. This is a naive
+   * implementation when coupled with setting input values, feel free to change
+   * this for a more efficient implementation.
+   *
+   * @param moves
+   * @return
+   */
+  private List<GdlSentence> toDoes2(List<ForwardDeadReckonLegalMoveInfo> moves)
+  {
+    List<GdlSentence> doeses = new ArrayList<>(moves.size());
+    Map<Role, Integer> roleIndices = getRoleIndices();
+
+    for (Role lRole : roles)
+    {
+      int index = roleIndices.get(lRole);
+      doeses.add(ProverQueryBuilder.toDoes(lRole, moves.get(index).mMove));
     }
     return doeses;
   }
