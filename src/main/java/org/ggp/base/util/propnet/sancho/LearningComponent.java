@@ -21,8 +21,8 @@ public abstract class LearningComponent extends BidirectionalPropagationComponen
   protected boolean                      dirty;
   protected boolean                      cachedValue;
 
-  public static int                      getCount;
-  public static int                      dirtyCount;
+//  public static int                      getCount;
+//  public static int                      dirtyCount;
 
   private long                           signature        = 0;
 
@@ -149,7 +149,7 @@ public abstract class LearningComponent extends BidirectionalPropagationComponen
   @Override
   public boolean getValue()
   {
-    getCount++;
+//    getCount++;
 
     if (dirty)
     {
@@ -169,7 +169,7 @@ public abstract class LearningComponent extends BidirectionalPropagationComponen
   @Override
   public void setDirty(boolean from, BidirectionalPropagationComponent source)
   {
-    dirtyCount++;
+//    dirtyCount++;
 
     if (!dirty)
     {

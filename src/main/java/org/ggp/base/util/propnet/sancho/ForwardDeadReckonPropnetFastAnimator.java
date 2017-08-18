@@ -283,7 +283,6 @@ public class ForwardDeadReckonPropnetFastAnimator
     }
   }
   private final ComponentIdComparator     componentIdComparator = new ComponentIdComparator();
-  private static Integer[]                sortingBuffer = new Integer[65536];
   private final ForwardDeadReckonPropNet  propNet;
   private int                             nextComponentBaseId = 0;
   private final int                       numStatefulComponents;
@@ -717,6 +716,7 @@ public class ForwardDeadReckonPropnetFastAnimator
   {
     if ( componentDataTable[numOutputsIndex] > 1 )
     {
+      final Integer[] sortingBuffer = new Integer[65536];
       for(int i = 0; i < componentDataTable[numOutputsIndex]; i++)
       {
         sortingBuffer[i] = componentDataTable[numOutputsIndex+i+1];
