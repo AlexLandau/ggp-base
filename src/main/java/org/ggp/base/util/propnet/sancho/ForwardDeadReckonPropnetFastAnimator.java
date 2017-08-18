@@ -614,6 +614,8 @@ public class ForwardDeadReckonPropnetFastAnimator
       int numOutputs = outputs.size();
       int dummyOrId = -1;
 
+      final Integer[] sortingBuffer = new Integer[65536];
+
       if ( outTypeClash )
       {
         //  Insert pass-through 1-input OR
@@ -642,7 +644,7 @@ public class ForwardDeadReckonPropnetFastAnimator
           componentDataTable[dummyComponentIndex++] = triggerId;
         }
 
-        sortOutputs(numOutputsIndex);
+        sortOutputs(sortingBuffer, numOutputsIndex);
 
         //  Original component now outputs to the remaining subset of its original
         //  outputs plus the dummy OR
@@ -695,7 +697,7 @@ public class ForwardDeadReckonPropnetFastAnimator
         componentDataTable[index++] = dummyOrId | (componentTypeUniversalLogic << 24);
       }
 
-      sortOutputs(numOutputsIndex);
+      sortOutputs(sortingBuffer, numOutputsIndex);
 
       if ( (fdrc.id & componentIdDeferredAsignmentBits) != 0 )
       {
@@ -712,11 +714,10 @@ public class ForwardDeadReckonPropnetFastAnimator
 
   //  Sort outputs of a component into component index order to improve cache
   //  access patterns when propagating
-  private void sortOutputs(int numOutputsIndex)
+  private void sortOutputs(Integer[] sortingBuffer, int numOutputsIndex)
   {
     if ( componentDataTable[numOutputsIndex] > 1 )
     {
-      final Integer[] sortingBuffer = new Integer[65536];
       for(int i = 0; i < componentDataTable[numOutputsIndex]; i++)
       {
         sortingBuffer[i] = componentDataTable[numOutputsIndex+i+1];
