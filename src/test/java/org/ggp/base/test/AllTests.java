@@ -25,6 +25,7 @@ import org.junit.runners.Suite;
     BaseCryptographyTest.class,
     BaseHashingTest.class,
     CanonicalJSONTest.class,
+    Chess200Test.class,
     ClojureGamerTest.class,
     DependencyGraphsTest.class,
     GameParsingTest.class,
