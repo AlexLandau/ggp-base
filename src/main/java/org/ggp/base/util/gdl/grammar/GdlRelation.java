@@ -11,6 +11,7 @@ public final class GdlRelation extends GdlSentence
     private final ImmutableList<GdlTerm> body;
     private transient Boolean ground;
     private final GdlConstant name;
+    private transient volatile String cachedString;
 
     GdlRelation(GdlConstant name, ImmutableList<GdlTerm> body)
     {
@@ -64,16 +65,21 @@ public final class GdlRelation extends GdlSentence
     @Override
     public String toString()
     {
-        StringBuilder sb = new StringBuilder();
+        String theString = this.cachedString;
+        if (theString == null) {
+            StringBuilder sb = new StringBuilder();
 
-        sb.append("( " + name + " ");
-        for (GdlTerm term : body)
-        {
-            sb.append(term + " ");
+            sb.append("( " + name + " ");
+            for (GdlTerm term : body)
+            {
+                sb.append(term + " ");
+            }
+            sb.append(")");
+
+            theString = sb.toString();
+            this.cachedString = theString;
         }
-        sb.append(")");
-
-        return sb.toString();
+        return theString;
     }
 
     @Override
