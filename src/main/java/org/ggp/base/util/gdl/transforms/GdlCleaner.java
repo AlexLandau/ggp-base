@@ -1,8 +1,9 @@
 package org.ggp.base.util.gdl.transforms;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
+import com.google.common.collect.ImmutableList;
 import org.ggp.base.util.gdl.grammar.Gdl;
 import org.ggp.base.util.gdl.grammar.GdlConstant;
 import org.ggp.base.util.gdl.grammar.GdlDistinct;
@@ -87,6 +88,8 @@ public class GdlCleaner {
             }
         }
 
+        description = cleanFunctionsInDistinct(description);
+
         //Get rid of the old style of "base" sentences (with arity more than 1, not in rules)
         //See e.g. current version of Qyshinsu on the Dresden server
         description = newDescription;
@@ -117,6 +120,80 @@ public class GdlCleaner {
         }
 
         return newDescription;
+    }
+
+    private static List<Gdl> cleanFunctionsInDistinct(List<Gdl> description) {
+        List<Gdl> newDescription = new ArrayList<Gdl>();
+        for (Gdl gdl : description) {
+            if (gdl instanceof GdlRule) {
+                newDescription.addAll(replaceFunctionalDistincts((GdlRule)gdl));
+            } else {
+                newDescription.add(gdl);
+            }
+        }
+        return newDescription;
+    }
+
+    private static List<GdlRule> replaceFunctionalDistincts(GdlRule rule) {
+        Queue<GdlRule> rulesInbox = new ArrayDeque<GdlRule>();
+        rulesInbox.add(rule);
+        List<GdlRule> rulesOutbox = new ArrayList<GdlRule>();
+
+        while (!rulesInbox.isEmpty()) {
+            GdlRule curRule = rulesInbox.remove();
+            if (!getFunctionalDistincts(curRule.getBody()).isEmpty()) {
+                rulesInbox.addAll(fixAFunctionalDistinct(curRule));
+            } else {
+                rulesOutbox.add(curRule);
+            }
+        }
+        return rulesOutbox;
+    }
+
+    private static List<GdlRule> fixAFunctionalDistinct(GdlRule rule) {
+        GdlDistinct toFix = getFunctionalDistincts(rule.getBody()).get(0);
+        int toFixIndex = rule.getBody().indexOf(toFix);
+        final GdlFunction functionArg;
+        final GdlTerm otherArg;
+        if (toFix.getArg1() instanceof GdlFunction) {
+            functionArg = (GdlFunction) toFix.getArg1();
+            otherArg = toFix.getArg2();
+        } else {
+            functionArg = (GdlFunction) toFix.getArg2();
+            otherArg = toFix.getArg1();
+        }
+        if (otherArg instanceof GdlFunction) {
+            GdlFunction otherFn = (GdlFunction) otherArg;
+            if (functionArg.getName() != otherFn.getName() || functionArg.arity() != otherFn.arity()) {
+                // Different names or arities, will never be the same, rule will never be valid
+                return ImmutableList.of();
+            }
+            // Same names, replace with disjunct rules
+            List<GdlDistinct> toFixReplacements = new ArrayList<GdlDistinct>();
+            for (int i = 0; i < functionArg.arity(); i++) {
+                toFixReplacements.add(GdlPool.getDistinct(functionArg.get(i), otherFn.get(i)));
+            }
+            List<GdlRule> replacedRules = new ArrayList<>();
+            for (GdlDistinct replacement : toFixReplacements) {
+                List<GdlLiteral> newBody = new ArrayList<>(rule.getBody());
+                replacedRules.add(GdlPool.getRule(rule.getHead(), newBody));
+            }
+            return replacedRules;
+        }
+        // Otherwise, one is a function and the other is not, and that's a pain to replace...
+        throw new UnsupportedOperationException("Problematic rule, functional vs. non-functional distinct: " + rule);
+    }
+
+    private static List<GdlDistinct> getFunctionalDistincts(List<GdlLiteral> literals) {
+        return literals.stream().flatMap(literal -> {
+            if (literal instanceof GdlDistinct) {
+                return ImmutableList.of((GdlDistinct) literal).stream();
+            } else {
+                return ImmutableList.<GdlDistinct>of().stream();
+            }
+        }).filter(distinct -> {
+            return distinct.getArg1() instanceof GdlFunction || distinct.getArg2() instanceof GdlFunction;
+        }).collect(Collectors.toList());
     }
 
     private static GdlRule removeNotDistinctLiterals(GdlRule rule) {
