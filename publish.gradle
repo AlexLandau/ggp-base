@@ -1,5 +1,21 @@
-apply plugin: 'maven'
-apply plugin: 'signing'
+apply plugin: 'maven-publish'
+// apply plugin: 'signing'
+
+
+
+    publishing {
+        publications {
+            maven(MavenPublication) {
+                groupId = 'net.alloyggp'
+                artifactId = 'alloy-ggp-base'
+                version = '0.0.17'
+
+                from components.java
+            }
+        }
+    }
+
+
 
 // Define how we publish artifacts to Maven.
 // Derived from instructions on the Central Repository site:
@@ -17,7 +33,7 @@ task sourcesJar(type: Jar) {
 artifacts {
     archives javadocJar, sourcesJar
 }
-signing {
+/*signing {
     sign configurations.archives
 }
 uploadArchives {
@@ -63,4 +79,4 @@ uploadArchives {
       }
     }
   }
-}
+}*/

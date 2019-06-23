@@ -132,4 +132,4 @@ task gameServerRunner(type: JavaExec) {
 }
 
 // This only needs to be uncommented when publishing to Maven.
-// apply from: 'publish.gradle'
+apply from: 'publish.gradle'
